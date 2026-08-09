@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IGV · Clash Royale Marketplace Prototype</title>
+<style>
+:root{
+  --ink:#14171F; --ink2:#1E2330; --page:#F4F5F7; --card:#FFFFFF;
+  --accent:#FF6A2B; --accent-d:#E5551A; --accent-bg:#FFF1E9;
+  --gold:#B07A15; --gold-bg:#FBF3DF;
+  --trust:#0E8F62; --trust-bg:#E7F6EF;
+  --info:#2563EB; --info-bg:#EBF1FE;
+  --danger:#D33A2F; --danger-bg:#FCEDEB;
+  --tx:#1B1F27; --tx2:#5B6472; --tx3:#8B93A1;
+  --line:#E6E8EC; --line2:#D6DAE1; --r:10px;
+  font-size:14px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif; background:var(--page); color:var(--tx); line-height:1.6;}
+button{font-family:inherit; cursor:pointer;}
+input,select{font-family:inherit; font-size:13px;}
+a{color:inherit; text-decoration:none;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px;}
+
+/* ===== Generic IGV header (game-agnostic) ===== */
+header{background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50;}
+.hd{display:flex; align-items:center; gap:24px; height:62px;}
+.logo{display:flex; align-items:baseline; gap:2px; font-size:24px; font-weight:800; letter-spacing:.5px; color:var(--ink); flex:none;}
+.logo .mk{width:26px; height:26px; border-radius:7px; background:var(--accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:14px; margin-right:7px; align-self:center;}
+.logo em{color:var(--accent); font-style:normal;}
+.logo small{font-size:12px; font-weight:600; color:var(--tx3); margin-left:2px;}
+.gsearch{display:flex; align-items:center; gap:8px; background:#F2F3F5; border:1px solid transparent; border-radius:999px; padding:0 16px; height:38px; width:340px; color:var(--tx3);}
+.gsearch:focus-within{border-color:var(--accent); background:#fff;}
+.gsearch input{background:none; border:none; outline:none; width:100%; font-size:13px;}
+.hd-right{margin-left:auto; display:flex; align-items:center; gap:18px; font-size:13px;}
+.hd-link{color:var(--tx2); font-weight:600; cursor:pointer;}
+.hd-link:hover{color:var(--accent);}
+.btn-auth{background:var(--accent); color:#fff; border:none; border-radius:999px; padding:9px 20px; font-size:13px; font-weight:700;}
+.btn-auth:hover{background:var(--accent-d);}
+.lang-sel{border:1px solid var(--line2); background:#fff; color:var(--tx2); font-weight:600; font-size:13px; border-radius:999px; padding:6px 10px; cursor:pointer; font-family:inherit;}
+.lang-sel:hover{border-color:var(--accent); color:var(--accent);}
+.hd-loc{color:var(--tx2); font-weight:600; cursor:pointer;}
+.hd-loc i{font-style:normal; color:var(--line2); margin:0 4px;}
+.note-toggle{background:none; border:1px solid var(--line2); color:var(--tx2); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer;}
+.note-toggle.on{border-color:var(--accent); color:var(--accent); background:var(--accent-bg);}
+
+/* ===== Category bar: breadcrumb + tabs ===== */
+.catbar{background:#F7F8FA; border-bottom:1px solid var(--line);}
+.catbar .wrap{display:flex; align-items:center; height:44px; gap:10px;}
+.crumb{font-size:13px; color:var(--tx3); display:flex; gap:7px; align-items:center; white-space:nowrap; overflow:hidden;}
+.crumb a{cursor:pointer;}
+.crumb a:hover{color:var(--accent);}
+.crumb b{color:var(--tx); font-weight:600;}
+.cattabs{margin-left:auto; display:flex; gap:2px;}
+.cattabs button{background:none; border:none; font-size:13.5px; font-weight:600; color:var(--tx2); padding:0 14px; height:44px; border-bottom:2px solid transparent;}
+.cattabs button:hover{color:var(--tx);}
+.cattabs button.on{color:var(--accent); border-bottom-color:var(--accent);}
+
+/* ===== Game/category header: H1 + SEO line + related ===== */
+.ghead{display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;}
+.gicon{width:52px; height:52px; border-radius:12px; background:var(--ink); color:#F5B301; font-size:26px; display:flex; align-items:center; justify-content:center; flex:none;}
+.ghead h1{font-size:21px; line-height:1.3;}
+.ghead .seo{font-size:13px; color:var(--tx2); margin-top:3px; max-width:820px;}
+.ghead .rel{font-size:12px; color:var(--tx3); margin-top:6px;}
+.ghead .rel a{color:var(--info); margin-right:12px; cursor:pointer;}
+.ghead .rel a:hover{text-decoration:underline;}
+
+/* ===== Compact pain-point banner on list pages ===== */
+.lbanner{position:relative; overflow:hidden; background:var(--ink); color:#fff; border-radius:14px; padding:16px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:18px;}
+.lbanner h3{font-size:16px; line-height:1.4;}
+.lbanner .pain{color:#FFB48F;}
+.lbanner p{font-size:12.5px; color:#AEB6C4; margin-top:3px;}
+.lbanner .chips{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; position:relative; z-index:1;}
+.lbanner .deco{position:absolute; right:-10px; top:50%; transform:translateY(-50%); height:130%; opacity:.6; pointer-events:none;}
+.lbanner > div:first-of-type{position:relative; z-index:1; max-width:62%;}
+
+/* ===== In-list product search ===== */
+.lsearch{display:flex; align-items:center; gap:7px; border:1px solid var(--line2); background:#fff; border-radius:8px; padding:0 12px; height:34px; color:var(--tx3); flex:1; max-width:320px;}
+.lsearch input{border:none; outline:none; width:100%; font-size:13px; background:none;}
+.lsearch:focus-within{border-color:var(--accent);}
+
+/* ===== Account card screenshots + zoom ===== */
+.acc-shot{position:relative; height:130px; overflow:hidden; cursor:zoom-in;}
+.acc-shot img{width:100%; height:100%; object-fit:cover; display:block;}
+.acc-shot .kt-badge{position:absolute; left:10px; top:10px; width:44px; height:44px;}
+.acc-shot .kt-badge b{font-size:17px;}
+.acc-shot .n-imgs{position:absolute; right:8px; bottom:8px; background:rgba(15,18,25,.72); color:#fff; font-size:11px; border-radius:999px; padding:2px 9px;}
+.acc-shot .zoom-hint{position:absolute; inset:0; background:rgba(15,18,25,.45); color:#fff; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px; font-weight:600; opacity:0; transition:opacity .15s;}
+.acc-shot:hover .zoom-hint{opacity:1;}
+.acc-thumb-tags{display:flex; gap:5px; flex-wrap:wrap; padding:9px 14px 0;}
+
+/* ===== Image lightbox (multi-photo + magnifier) ===== */
+.lightbox{display:none; position:fixed; inset:0; background:rgba(10,12,18,.88); z-index:200; flex-direction:column;}
+.lightbox.show{display:flex;}
+.lb-hd{display:flex; align-items:center; color:#fff; padding:14px 22px; gap:14px;}
+.lb-hd .x{margin-left:auto; background:none; border:none; color:#fff; font-size:20px; cursor:pointer;}
+.lb-stage{flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;}
+.lb-frame{width:min(860px,86vw); height:min(520px,62vh); overflow:hidden; border-radius:12px; background:#000; cursor:zoom-in;}
+.lb-frame.zoomed{cursor:zoom-out;}
+.lb-frame img{width:100%; height:100%; object-fit:contain; transition:transform .12s; transform-origin:center;}
+.lb-arrow{position:absolute; top:50%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%; border:none; background:rgba(255,255,255,.14); color:#fff; font-size:18px; cursor:pointer;}
+.lb-arrow:hover{background:var(--accent);}
+.lb-arrow.prev{left:4vw;} .lb-arrow.next{right:4vw;}
+.lb-ft{display:flex; align-items:center; justify-content:center; gap:16px; padding:14px;}
+.lb-zoom{display:flex; gap:6px; align-items:center; background:rgba(255,255,255,.1); border-radius:999px; padding:4px 8px;}
+.lb-zoom button{width:28px; height:28px; border:none; border-radius:50%; background:none; color:#fff; font-size:15px; cursor:pointer;}
+.lb-zoom button:hover{background:rgba(255,255,255,.15);}
+.lb-zoom span{color:#fff; font-size:12px; min-width:42px; text-align:center;}
+.lb-thumbs{display:flex; gap:8px;}
+.lb-thumbs img{width:76px; height:48px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid transparent; opacity:.65;}
+.lb-thumbs img.on{border-color:var(--accent); opacity:1;}
+
+/* ===== Season pulse chips (reused in banners) ===== */
+.pulse{background:var(--ink2); color:#CBD2DE; font-size:12px;}
+.pulse .wrap{display:flex; gap:8px; align-items:center; height:38px; overflow-x:auto;}
+.pulse .p-label{color:#8892A2; flex:none;}
+.pchip{flex:none; display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:3px 12px; cursor:pointer;}
+.pchip:hover{border-color:var(--accent);}
+.pchip .dot{width:6px; height:6px; border-radius:50%;}
+.pchip b{color:#fff; font-weight:600;}
+.pchip .cta{color:var(--accent); font-weight:600;}
+
+/* ===== Page containers ===== */
+.page{display:none; padding:24px 0 60px;}
+.page.show{display:block;}
+.back{display:inline-flex; align-items:center; gap:6px; color:var(--tx2); font-size:13px; margin-bottom:14px; background:none; border:none;}
+.back:hover{color:var(--accent);}
+h1{font-size:22px; font-weight:700;}
+h2{font-size:17px; font-weight:700; margin-bottom:14px;}
+.sec{margin-top:34px;}
+.sec-hd{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+.sec-hd .more{font-size:13px; color:var(--accent); background:none; border:none; font-weight:600;}
+
+/* ===== Shared components ===== */
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px;}
+.tag{display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; line-height:1.6;}
+.tag.meta{background:var(--accent-bg); color:var(--accent-d);}
+.tag.gold{background:var(--gold-bg); color:var(--gold);}
+.tag.trust{background:var(--trust-bg); color:var(--trust);}
+.tag.info{background:var(--info-bg); color:var(--info);}
+.tag.gray{background:#EFF1F4; color:var(--tx2);}
+.btn{border-radius:8px; border:1px solid var(--line2); background:#fff; padding:9px 18px; font-size:14px; font-weight:600; color:var(--tx);}
+.btn:hover{border-color:var(--tx3);}
+.btn.pri{background:var(--accent); border-color:var(--accent); color:#fff;}
+.btn.pri:hover{background:var(--accent-d);}
+.btn.big{padding:12px 28px; font-size:15px;}
+.btn.blk{width:100%;}
+.price{font-weight:800; color:var(--accent-d);}
+.del{color:var(--tx3); text-decoration:line-through; font-weight:400;}
+.hint{font-size:12px; color:var(--tx3);}
+.kv{display:flex; justify-content:space-between; font-size:13px; padding:5px 0;}
+.kv .k{color:var(--tx2);}
+.grid{display:grid; gap:14px;}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g2{grid-template-columns:repeat(2,1fr);}
+.chip{display:inline-block; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:3px 9px; margin:0 6px 6px 0; background:#fff;}
+.chip.m{border-color:var(--accent); color:var(--accent-d); background:var(--accent-bg); font-weight:600;}
+.stars{color:#F5A623; font-size:12px;}
+
+/* ===== Overview ===== */
+.hero{background:var(--ink); border-radius:16px; color:#fff; padding:34px 38px; position:relative; overflow:hidden;}
+.hero h1{font-size:28px; color:#fff;}
+.hero p{color:#AEB6C4; margin-top:6px; max-width:560px;}
+.hero-stats{display:flex; gap:34px; margin-top:22px; position:relative; z-index:1;}
+.hero-stats b{display:block; font-size:20px;}
+.hero-stats span{font-size:12px; color:#8892A2;}
+.biz{display:flex; flex-direction:column; gap:10px; padding:20px; cursor:pointer; transition:border-color .15s;}
+.biz:hover{border-color:var(--accent);}
+.biz .ic{width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px;}
+.biz h3{font-size:16px;}
+.biz p{font-size:13px; color:var(--tx2);}
+.biz .go{margin-top:auto; color:var(--accent); font-size:13px; font-weight:700;}
+
+/* ===== Accounts list ===== */
+.acc-layout{display:grid; grid-template-columns:236px 1fr; gap:20px; align-items:start;}
+.filter{position:sticky; top:110px; padding:16px; font-size:13px;}
+.filter h4{font-size:13px; margin:14px 0 8px; color:var(--tx);}
+.filter h4:first-child{margin-top:0;}
+.filter label{display:flex; align-items:center; gap:7px; padding:3px 0; color:var(--tx2); cursor:pointer;}
+.filter label:hover{color:var(--tx);}
+.filter .cnt{margin-left:auto; color:var(--tx3); font-size:11px;}
+.filter input[type=range]{width:100%; accent-color:var(--accent);}
+.filter .reset{margin-top:14px; width:100%; font-size:12px; padding:6px;}
+.toolbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.toolbar select{border:1px solid var(--line2); border-radius:8px; padding:6px 10px; background:#fff;}
+.acc-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.acc-card{cursor:pointer; overflow:hidden; transition:border-color .15s, transform .15s;}
+.acc-card:hover{border-color:var(--accent); transform:translateY(-2px);}
+.acc-thumb{background:var(--ink2); color:#fff; padding:16px; display:flex; align-items:center; gap:12px;}
+.kt-badge{width:52px; height:52px; border-radius:12px; background:var(--accent); display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:800; line-height:1.1; flex:none;}
+.kt-badge span{font-size:10px; font-weight:600; opacity:.85;}
+.kt-badge b{font-size:20px;}
+.acc-thumb .t-tags{display:flex; flex-wrap:wrap; gap:5px;}
+.acc-body{padding:12px 14px 14px;}
+.acc-title{font-size:14px; font-weight:600; margin-bottom:8px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+.acc-fields{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;}
+.f-pill{font-size:11px; background:#F1F3F6; border-radius:6px; padding:2px 7px; color:var(--tx2);}
+.f-pill b{color:var(--tx);}
+.acc-rare{font-size:12px; color:var(--gold); min-height:20px; margin-bottom:8px;}
+.acc-foot{display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--line); padding-top:10px;}
+.acc-foot .price{font-size:18px;}
+.acc-seller{font-size:11px; color:var(--tx3);}
+
+/* ===== Account detail ===== */
+.det-top{display:grid; grid-template-columns:1.1fr 1fr; gap:22px; align-items:start;}
+.gallery .main{background:var(--ink2); border-radius:12px; height:300px; display:flex; align-items:center; justify-content:center; color:#7C8596; font-size:13px; flex-direction:column; gap:8px;}
+.gallery .thumbs{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:8px;}
+.gallery .thumbs div{background:#DDE1E7; border-radius:8px; height:46px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--tx3); cursor:pointer; border:2px solid transparent;}
+.gallery .thumbs div.on{border-color:var(--accent); background:#fff;}
+.buy-box{padding:20px;}
+.buy-box .p-row{display:flex; align-items:baseline; gap:10px; margin:10px 0 2px;}
+.buy-box .p-row .price{font-size:30px;}
+.ins-opts{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0;}
+.ins-opts label{border:1.5px solid var(--line2); border-radius:8px; padding:8px 6px; text-align:center; cursor:pointer; font-size:12px;}
+.ins-opts label b{display:block; font-size:13px;}
+.ins-opts label span{color:var(--tx3); font-size:11px;}
+.ins-opts input{display:none;}
+.ins-opts label.on{border-color:var(--trust); background:var(--trust-bg);}
+.buy-actions{display:flex; gap:10px; margin-top:14px;}
+.zone{padding:16px 18px;}
+.zone h3{font-size:14px; display:flex; align-items:center; gap:7px; margin-bottom:8px;}
+.zone.trust-z{border:1.5px solid var(--trust);}
+.zone-ic{width:22px; height:22px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; color:#fff;}
+.seller-card{display:flex; align-items:center; gap:12px; padding:14px 18px;}
+.avatar{width:42px; height:42px; border-radius:50%; background:var(--ink2); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700;}
+.flow{display:flex; gap:0; margin-top:10px;}
+.flow .step{flex:1; text-align:center; font-size:12px; color:var(--tx2); position:relative; padding-top:26px;}
+.flow .step:before{content:attr(data-n); position:absolute; top:0; left:50%; transform:translateX(-50%); width:20px; height:20px; border-radius:50%; background:var(--trust-bg); color:var(--trust); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center;}
+.flow .step:after{content:""; position:absolute; top:10px; left:calc(50% + 14px); right:calc(-50% + 14px); height:1px; background:var(--line2);}
+.flow .step:last-child:after{display:none;}
+
+/* ===== Top-Up ===== */
+.pass-card{display:grid; grid-template-columns:1fr auto; gap:16px; padding:22px 24px; background:var(--ink); color:#fff; border:none; align-items:center;}
+.pass-card h3{font-size:18px;}
+.pass-card .sub{color:#AEB6C4; font-size:13px; margin-top:4px;}
+.pass-card .cd{display:inline-flex; gap:5px; align-items:center; background:rgba(255,106,43,.15); border:1px solid rgba(255,106,43,.4); color:#FFB48F; padding:3px 10px; border-radius:999px; font-size:12px; margin-top:10px;}
+.sku-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.sku{padding:18px; cursor:pointer; transition:border-color .15s;}
+.sku:hover{border-color:var(--accent);}
+.sku .amt{font-size:18px; font-weight:800;}
+.sku .amt i{font-style:normal; font-size:13px; color:#22B573; margin-left:4px;}
+.sku .prices{margin:8px 0 4px; display:flex; align-items:baseline; gap:8px;}
+.sku .prices .price{font-size:20px;}
+.sku-foot{display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:12px; color:var(--tx3);}
+.sku-foot .btn{padding:5px 14px; font-size:12px;}
+
+/* ===== Offer drawer ===== */
+.mask{display:none; position:fixed; inset:0; background:rgba(15,18,25,.5); z-index:100; align-items:flex-end; justify-content:center;}
+.mask.show{display:flex;}
+.drawer{background:#fff; width:100%; max-width:760px; border-radius:16px 16px 0 0; max-height:82vh; display:flex; flex-direction:column;}
+.drawer-hd{display:flex; align-items:center; justify-content:space-between; padding:16px 22px; border-bottom:1px solid var(--line);}
+.drawer-hd h3{font-size:16px;}
+.drawer-hd .x{background:none; border:none; font-size:18px; color:var(--tx3);}
+.offers{overflow-y:auto; padding:10px 22px;}
+.offer{display:grid; grid-template-columns:auto 1fr auto auto; gap:14px; align-items:center; padding:12px 10px; border-bottom:1px solid var(--line); cursor:pointer; border-radius:8px;}
+.offer:hover{background:#FAFBFC;}
+.offer.on{background:var(--accent-bg); outline:1.5px solid var(--accent);}
+.offer .radio{width:16px; height:16px; border:2px solid var(--line2); border-radius:50%;}
+.offer.on .radio{border-color:var(--accent); background:radial-gradient(circle, var(--accent) 45%, #fff 50%);}
+.offer .s-name{font-weight:600; font-size:13px;}
+.offer .s-meta{font-size:11px; color:var(--tx3);}
+.offer .d-tags{display:flex; gap:5px; justify-content:flex-end;}
+.offer .o-price{font-size:16px; text-align:right;}
+.drawer-ft{border-top:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; gap:16px;}
+.qty{display:flex; align-items:center; border:1px solid var(--line2); border-radius:8px;}
+.qty button{width:30px; height:32px; background:none; border:none; font-size:15px; color:var(--tx2);}
+.qty span{width:34px; text-align:center; font-weight:700;}
+.drawer-ft .total{margin-left:auto; font-size:13px; color:var(--tx2);}
+.drawer-ft .total .price{font-size:20px; margin-left:4px;}
+
+/* ===== Boosting ===== */
+.svc{padding:20px; cursor:pointer; transition:border-color .15s;}
+.svc:hover{border-color:var(--accent);}
+.svc h3{font-size:16px; display:flex; gap:8px; align-items:center;}
+.svc .mech{font-size:12px; color:var(--tx2); margin:6px 0 10px; min-height:36px;}
+.svc-foot{display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:10px; font-size:13px;}
+.boost-layout{display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:start;}
+.cfg{padding:20px;}
+.cfg .row{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+.cfg .row label{width:70px; flex:none; color:var(--tx2); font-size:13px;}
+.cfg input[type=range]{flex:1; accent-color:var(--accent);}
+.cfg .val{width:130px; text-align:right; font-weight:700; font-size:13px;}
+.opt-line{display:flex; align-items:center; gap:8px; padding:7px 0; font-size:13px; border-top:1px dashed var(--line); cursor:pointer;}
+.opt-line input{accent-color:var(--accent);}
+.opt-line .fee{margin-left:auto; color:var(--tx3); font-size:12px;}
+.sum-bar{padding:18px 20px; position:sticky; top:110px;}
+.sum-bar .metric{display:flex; gap:12px; margin:12px 0;}
+.sum-bar .metric > div{flex:1; background:#F4F5F7; border-radius:8px; padding:10px 12px;}
+.sum-bar .metric span{font-size:11px; color:var(--tx3); display:block;}
+.sum-bar .metric b{font-size:19px;}
+.tier{display:flex; gap:10px;}
+.tier label{flex:1; border:1.5px solid var(--line2); border-radius:10px; padding:12px; cursor:pointer; text-align:center;}
+.tier label.on{border-color:var(--accent); background:var(--accent-bg);}
+.tier label b{display:block; font-size:15px;}
+.tier label span{font-size:12px; color:var(--tx2);}
+.tier input{display:none;}
+
+/* ===== Checkout ===== */
+.co-layout{display:grid; grid-template-columns:1.5fr 1fr; gap:20px; align-items:start;}
+.co-sec{padding:18px 20px; margin-bottom:14px;}
+.co-sec h3{font-size:14px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+.co-sec h3 .n{width:20px; height:20px; border-radius:50%; background:var(--ink); color:#fff; font-size:11px; display:inline-flex; align-items:center; justify-content:center;}
+.fld{margin-bottom:12px;}
+.fld label{display:block; font-size:12px; color:var(--tx2); margin-bottom:5px;}
+.fld input[type=text],.fld select{width:100%; border:1px solid var(--line2); border-radius:8px; padding:9px 12px; outline:none;}
+.fld input:focus{border-color:var(--accent);}
+.pay-opt{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line2); border-radius:10px; padding:11px 14px; margin-bottom:8px; cursor:pointer; font-size:13px;}
+.pay-opt.on{border-color:var(--accent); background:var(--accent-bg);}
+.pay-opt input{accent-color:var(--accent);}
+.pay-opt .bal{margin-left:auto; font-size:12px; color:var(--tx3);}
+.co-sum{padding:18px 20px; position:sticky; top:110px;}
+.co-sum .item{display:flex; gap:12px; padding-bottom:12px; border-bottom:1px solid var(--line); margin-bottom:10px;}
+.co-sum .item .ic{width:44px; height:44px; border-radius:10px; background:var(--ink2); color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; flex:none;}
+.co-sum .item h4{font-size:13px;}
+.co-sum .item p{font-size:12px; color:var(--tx3);}
+.co-total{display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--line); margin-top:10px; padding-top:12px;}
+.co-total .price{font-size:24px;}
+.agree{font-size:12px; color:var(--tx2); display:flex; gap:7px; margin:14px 0; align-items:flex-start;}
+.agree input{margin-top:3px; accent-color:var(--accent);}
+.guard{background:var(--trust-bg); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--trust); margin-top:12px;}
+
+/* ===== Success ===== */
+.done{max-width:560px; margin:40px auto; text-align:center; padding:40px 32px;}
+.done .ok{width:64px; height:64px; border-radius:50%; background:var(--trust-bg); color:var(--trust); font-size:30px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;}
+.done .steps{text-align:left; background:#F7F8FA; border-radius:10px; padding:14px 18px; margin:18px 0; font-size:13px; color:var(--tx2);}
+.done .steps li{margin:6px 0 6px 18px;}
+
+/* ===== Prototype design notes ===== */
+body.notes [data-note]{outline:1.5px dashed var(--accent); outline-offset:3px; position:relative;}
+body.notes [data-note]:hover::after{content:attr(data-note); position:absolute; z-index:99; left:0; top:100%; margin-top:8px; background:var(--ink); color:#fff; font-size:12px; line-height:1.5; padding:8px 12px; border-radius:8px; width:max-content; max-width:320px; box-shadow:0 6px 20px rgba(0,0,0,.25); font-weight:400; white-space:normal;}
+.note-tip{position:fixed; bottom:16px; right:16px; background:var(--ink); color:#fff; padding:8px 14px; border-radius:999px; font-size:12px; z-index:60; display:none;}
+body.notes .note-tip{display:block;}
+
+@media (max-width:900px){
+  .g4,.g3,.acc-grid,.sku-grid{grid-template-columns:repeat(2,1fr);}
+  .acc-layout,.det-top,.boost-layout,.co-layout{grid-template-columns:1fr;}
+  .filter{position:static;}
+  .nav{display:none;}
+}
+@media (max-width:560px){
+  .g4,.g3,.acc-grid,.sku-grid{grid-template-columns:1fr;}
+  .gsearch{display:none;}
+  .catbar .wrap{overflow-x:auto;}
+  .lbanner > div:first-of-type{max-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="logo"><span class="mk">◆</span>iG<em>V</em><small>.com</small></div>
+    <div class="gsearch" data-note="Generic IGV header, no game-specific content: global search spans games and categories. Game and category context lives in the category bar and page header below">🔍<input placeholder="Search in iGV — games, accounts, top-up, boosting"></div>
+    <div class="hd-right">
+      <span class="hd-link">Seller ›</span>
+      <button class="btn-auth">Log in / Sign up</button>
+      <select id="langSel" class="lang-sel" onchange="setLang(this.value)">
+        <option value="zh">中文</option><option value="en" selected>English</option><option value="de">Deutsch</option><option value="fr">Français</option>
+      </select><span class="hd-loc"><i>|</i>USD</span>
+      <button class="note-toggle" id="noteBtn" onclick="toggleNotes()">◎ Design notes</button>
+    </div>
+  </div>
+</header>
+
+<div class="catbar">
+  <div class="wrap">
+    <div class="crumb" id="cbCrumb" data-note="Breadcrumb tells users and search engines where they are: Home › All Games › game › category. The tabs on the right navigate businesses within this game and highlight the current page"><a onclick="nav('home')">Home</a> › <a onclick="nav('home')">All Games</a> › <a onclick="nav('home')">Clash Royale</a></div>
+    <div class="cattabs">
+      <button id="ct-home" class="on" onclick="nav('home')">Overview</button>
+      <button id="ct-accounts" onclick="nav('accounts')">Accounts</button>
+      <button id="ct-topup" onclick="nav('topup')">Top-Up</button>
+      <button id="ct-boosting" onclick="nav('boosting')">Boosting</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Overview ================= -->
+<div class="page show" id="page-home">
+  <div class="wrap">
+    <div class="hero" style="padding:30px 38px">
+      <svg viewBox="0 0 340 170" style="position:absolute; right:0; top:0; height:100%; opacity:.85" aria-hidden="true">
+        <rect x="30" y="90" width="44" height="80" rx="4" fill="#273047"/>
+        <polygon points="26,92 78,92 52,66" fill="#323C55"/>
+        <rect x="248" y="90" width="44" height="80" rx="4" fill="#273047"/>
+        <polygon points="244,92 296,92 270,66" fill="#323C55"/>
+        <rect x="130" y="62" width="62" height="108" rx="5" fill="#313A52"/>
+        <polygon points="124,64 198,64 161,28" fill="#3D4763"/>
+        <polygon points="141,22 149,8 156,18 161,4 166,18 173,8 181,22" fill="#F5B301"/>
+        <rect x="146" y="98" width="30" height="40" rx="3" fill="#1B2233"/>
+        <rect x="216" y="118" width="26" height="36" rx="4" fill="#FF6A2B" opacity=".55" transform="rotate(8 229 136)"/>
+        <rect x="94" y="122" width="26" height="36" rx="4" fill="#5A8DEE" opacity=".5" transform="rotate(-9 107 140)"/>
+        <circle cx="52" cy="46" r="4" fill="#C77DFF" opacity=".7"/><circle cx="286" cy="40" r="3" fill="#C77DFF" opacity=".6"/>
+      </svg>
+      <div style="position:relative; z-index:1">
+        <h1>Clash Royale Marketplace</h1>
+        <p style="max-width:520px">Accounts · Top-Up · Boosting — verified sellers, funds held in escrow, released after you confirm.</p>
+        <div class="hero-stats">
+          <div><b>1,284</b><span>Accounts listed</span></div>
+          <div><b>356</b><span>Orders in 24h</span></div>
+          <div><b>412</b><span>Active sellers</span></div>
+          <div><b>98.7%</b><span>Positive rating</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="grid g3">
+        <div class="card biz" onclick="nav('accounts')" data-note="Three businesses, three mindsets: accounts = picking an asset (unique listings), top-up = price comparison (standardized offers), boosting = placing a service order. The overview uses parallel entries instead of one mixed feed">
+          <div class="ic" style="background:var(--accent-bg); color:var(--accent-d)">♜</div>
+          <h3>Accounts <span class="tag gray">Unique · one-off listings</span></h3>
+          <p>KT16 maxed, Hero collector and rare-emote accounts. Every listing is unique and platform-verified.</p>
+          <div class="go">1,284 accounts listed · from $39 ›</div>
+        </div>
+        <div class="card biz" onclick="nav('topup')">
+          <div class="ic" style="background:var(--info-bg); color:var(--info)">◈</div>
+          <h3>Gems Top-Up <span class="tag gray">Standardized · multi-seller</span></h3>
+          <p>Gem packs and Diamond Pass, up to 22% below official. Compare sellers per tier, minutes-level delivery.</p>
+          <div class="go">Diamond Pass from $9.85 ›</div>
+        </div>
+        <div class="card biz" onclick="nav('boosting')">
+          <div class="ic" style="background:var(--trust-bg); color:var(--trust)">⚔</div>
+          <h3>Boosting <span class="tag gray">Standardized · multi-seller</span></h3>
+          <p>Ranked climbing, 20-Win Challenge runs and trophy pushing. Fully trackable, streaming available.</p>
+          <div class="go">Ranked from $4 / division ›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd"><h2>Featured accounts</h2><button class="more" onclick="nav('accounts')">View all ›</button></div>
+      <div class="acc-grid" id="homeAccs" style="grid-template-columns:repeat(4,1fr)"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd"><h2>Popular top-up</h2><button class="more" onclick="nav('topup')">View all ›</button></div>
+      <div class="sku-grid" id="homeSkus"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd"><h2>Boosting services</h2><button class="more" onclick="nav('boosting')">View all ›</button></div>
+      <div class="grid g3" id="homeSvcs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Accounts list ================= -->
+<div class="page" id="page-accounts">
+  <div class="wrap">
+    <div class="ghead">
+      <div class="gicon">♛</div>
+      <div>
+        <h1>Clash Royale Accounts for sale</h1>
+        <p class="seo">Buy Clash Royale accounts: maxed, collector and rare-emote accounts. Platform-verified, recovery insurance available.</p>
+        <div class="rel">Other games: <a onclick="alert('Prototype stub: opens Clash of Clans Accounts')">Clash of Clans Accounts</a><a onclick="alert('Prototype stub: opens Brawl Stars Accounts')">Brawl Stars Accounts</a></div>
+      </div>
+    </div>
+    <div class="lbanner" data-note="The season-pulse strip became a compact pain-point banner per list page: game-flavored art + a pain statement buyers recognize + mechanic-driven countdowns. Kept short so products and Buy Now stay above the fold">
+      <svg class="deco" viewBox="0 0 240 130" aria-hidden="true">
+        <rect x="150" y="46" width="52" height="84" rx="4" fill="#313A52"/><polygon points="145,48 207,48 176,20" fill="#3D4763"/>
+        <polygon points="160,16 167,4 173,13 177,1 181,13 187,4 193,16" fill="#F5B301"/>
+        <rect x="70" y="70" width="30" height="42" rx="4" fill="#FF6A2B" opacity=".5" transform="rotate(-8 85 91)"/>
+        <rect x="110" y="80" width="30" height="42" rx="4" fill="#5A8DEE" opacity=".45" transform="rotate(6 125 101)"/>
+      </svg>
+      <div>
+        <h3><span class="pain">Maxing takes months; missed exclusives are gone forever</span> — buy a ready account</h3>
+      </div>
+      <div class="chips">
+        <span class="pchip" onclick="fMeta.checked=true;renderAccList()"><span class="dot" style="background:#22B573"></span>July meta updated <b>See meta-ready ›</b></span>
+        <span class="pchip"><span class="dot" style="background:#F5B301"></span>All <b>platform-verified</b> · insured</span>
+      </div>
+    </div>
+    <div class="acc-layout">
+      <div class="card filter" data-note="Filter facets map straight to the three buyer questions: progression (will I get stronger), rarity (is it worth the price), trade terms (is it safe to buy). All filters apply live">
+        <h4>King Tower level</h4>
+        <label><input type="checkbox" class="fk" value="16" onchange="renderAccList()"> KT 16 <span class="cnt">(3)</span></label>
+        <label><input type="checkbox" class="fk" value="15" onchange="renderAccList()"> KT 15 <span class="cnt">(3)</span></label>
+        <label><input type="checkbox" class="fk" value="14" onchange="renderAccList()"> KT 14 <span class="cnt">(2)</span></label>
+        <h4>Max price: $<span id="pmaxV">600</span></h4>
+        <input type="range" id="pmax" min="50" max="600" value="600" step="10" oninput="renderAccList()">
+        <h4>Heroes ≥ <span id="heroV">0</span></h4>
+        <input type="range" id="hmin" min="0" max="14" value="0" step="1" oninput="renderAccList()">
+        <h4>Rarity &amp; trade</h4>
+        <label><input type="checkbox" id="fMeta" onchange="renderAccList()"> <span class="tag meta">Meta ready</span></label>
+        <label><input type="checkbox" id="fRare" onchange="renderAccList()"> Rare emotes / badges</label>
+        <label><input type="checkbox" id="fRename" onchange="renderAccList()"> Free rename available</label>
+        <label><input type="checkbox" id="fEmail" onchange="renderAccList()"> Original email included</label>
+        <button class="btn reset" onclick="resetFilters()">Reset filters</button>
+      </div>
+      <div>
+        <div class="toolbar" style="gap:12px">
+          <div class="lsearch" data-note="In-list product search: matches structured fields — listing title, maxed card names, rare emote names — and stacks with the left-side filters">🔍<input id="accQ" placeholder="Search accounts: card / hero / emote, e.g. CRL 20-Win" oninput="renderAccList()"></div>
+          <span class="hint" style="margin-left:auto"><b id="accCount" style="color:var(--tx)">8</b> accounts</span>
+          <select id="accSort" onchange="renderAccList()" data-note="Default sort is the platform recommendation score (progression / rarity / seller credit weighted). Price sorts serve comparison shoppers; newest serves snipers waiting for fresh listings">
+            <option value="rec">Recommended</option>
+            <option value="asc">Price: low to high</option>
+            <option value="desc">Price: high to low</option>
+            <option value="new">Newest</option>
+          </select>
+        </div>
+        <div class="acc-grid" id="accList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Account detail ================= -->
+<div class="page" id="page-account-detail">
+  <div class="wrap" id="accDetail"></div>
+</div>
+
+<!-- ================= Top-Up list ================= -->
+<div class="page" id="page-topup">
+  <div class="wrap">
+    <div class="ghead">
+      <div class="gicon">◈</div>
+      <div>
+        <h1>Clash Royale Top-Up · Gems &amp; Diamond Pass</h1>
+        <p class="seo">Gems and Diamond Pass top-up, multi-seller prices below official, delivery from 15 minutes.</p>
+        <div class="rel">Other games: <a onclick="alert('Prototype stub: opens Brawl Stars Top-Up')">Brawl Stars Top-Up</a><a onclick="alert('Prototype stub: opens Clash of Clans Top-Up')">Clash of Clans Top-Up</a></div>
+      </div>
+    </div>
+    <div class="lbanner">
+      <svg class="deco" viewBox="0 0 240 130" aria-hidden="true">
+        <polygon points="170,26 196,44 186,78 154,78 144,44" fill="#5A8DEE" opacity=".8"/>
+        <polygon points="170,36 186,47 180,68 160,68 154,47" fill="#8FB4F5" opacity=".9"/>
+        <polygon points="106,60 124,73 117,96 95,96 88,73" fill="#5A8DEE" opacity=".45"/>
+        <circle cx="210" cy="100" r="16" fill="#F5B301" opacity=".65"/><text x="210" y="106" text-anchor="middle" font-size="15" fill="#7A5600" font-weight="700">$</text>
+      </svg>
+      <div>
+        <h3><span class="pain">The Pass resets monthly; unclaimed rewards expire</span> — save up to 22% vs official</h3>
+      </div>
+      <div class="chips">
+        <span class="pchip" onclick="openOffers('pass')"><span class="dot" style="background:#F5B301"></span>Pass season ends in <b>13 days</b><span class="cta">Renew ›</span></span>
+        <span class="pchip"><span class="dot" style="background:#22B573"></span>Delivery from <b>15 min</b></span>
+      </div>
+    </div>
+
+    <div class="toolbar" style="gap:12px">
+      <div class="lsearch">🔍<input id="skuQ" placeholder="Search top-up: gems / pass / tier" oninput="renderSkus()"></div>
+      <span class="hint" style="margin-left:auto">Delivery: <span class="tag info">Gift via friend</span> no password · <span class="tag gray">Login top-up</span> faster</span>
+    </div>
+    <div class="sku-grid" id="skuList" data-note="No more hero banner for the Pass: the list is uniformly title + products. The Pass is the first SKU in the same offer-comparison flow; its subscription traits (countdown, renewal reminder) live in the card tag and the offer drawer"></div>
+
+    <div class="sec">
+      <h2>How top-up works</h2>
+      <div class="card" style="padding:16px 20px; font-size:13px; color:var(--tx2)">
+        <div class="kv"><span class="k">Delivery time</span><span>Gift via friend needs a friend request first (~1–24 h); login top-up usually takes 15–60 min</span></div>
+        <div class="kv"><span class="k">Safety</span><span>Login top-up uses official store channels only — no third-party stolen cards; funds stay in escrow until delivery completes</span></div>
+        <div class="kv"><span class="k">What we need</span><span>Gift via friend: your Player Tag (#Tag); login top-up: Supercell ID email + verification code (shared in order chat after purchase)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Boosting list ================= -->
+<div class="page" id="page-boosting">
+  <div class="wrap">
+    <div class="ghead">
+      <div class="gicon">⚔</div>
+      <div>
+        <h1>Clash Royale Boosting</h1>
+        <p class="seo">Ranked climbing, challenge runs and trophy pushing. Live quotes, pick your booster, track progress.</p>
+        <div class="rel">Other games: <a onclick="alert('Prototype stub: opens Brawl Stars Boosting')">Brawl Stars Boosting</a><a onclick="alert('Prototype stub: opens Clash of Clans Boosting')">Clash of Clans Boosting</a></div>
+      </div>
+    </div>
+    <div class="lbanner">
+      <svg class="deco" viewBox="0 0 240 130" aria-hidden="true">
+        <path d="M150 30 L190 30 L186 62 L170 76 L154 62 Z" fill="#22B573" opacity=".7"/>
+        <path d="M158 40 L182 40 L179 60 L170 68 L161 60 Z" fill="#7BDBB0" opacity=".8"/>
+        <rect x="96" y="58" width="8" height="52" rx="2" fill="#B7BFCC" opacity=".55" transform="rotate(-35 100 84)"/>
+        <rect x="118" y="58" width="8" height="52" rx="2" fill="#B7BFCC" opacity=".55" transform="rotate(35 122 84)"/>
+        <polygon points="206,86 213,72 220,84 226,70 231,84 224,98 211,98" fill="#F5B301" opacity=".6"/>
+      </svg>
+      <div>
+        <h3><span class="pain">Can't hit 20 wins? No time to climb?</span> — hire a verified booster</h3>
+      </div>
+      <div class="chips">
+        <span class="pchip" onclick="openBoost('ch20')"><span class="dot" style="background:#D33A2F"></span>20-Win Challenge ends in <b>4 days</b><span class="cta">Order ›</span></span>
+        <span class="pchip" onclick="openBoost('ranked')"><span class="dot" style="background:#FF6A2B"></span>Ranked resets in <b>13 days</b><span class="cta">Climb ›</span></span>
+      </div>
+    </div>
+    <div class="toolbar" style="gap:12px">
+      <div class="lsearch">🔍<input id="svcQ" placeholder="Search boosting: ranked / 20-win / trophies" oninput="renderSvcs()"></div>
+    </div>
+    <div class="grid g3" id="svcList"></div>
+  </div>
+</div>
+
+<!-- ================= Boosting detail ================= -->
+<div class="page" id="page-boost-detail">
+  <div class="wrap" id="boostDetail"></div>
+</div>
+
+<!-- ================= Checkout ================= -->
+<div class="page" id="page-checkout">
+  <div class="wrap" id="checkoutBody"></div>
+</div>
+
+<!-- ================= Success ================= -->
+<div class="page" id="page-success">
+  <div class="wrap" id="successBody"></div>
+</div>
+
+<!-- Offer drawer -->
+<div class="mask" id="offerMask" onclick="if(event.target===this)closeOffers()">
+  <div class="drawer">
+    <div class="drawer-hd">
+      <h3 id="offerTitle">Choose a seller</h3>
+      <button class="x" onclick="closeOffers()">✕</button>
+    </div>
+    <div style="padding:8px 22px 0" class="hint">Same standardized product, sorted by price. Seller credit, delivery method and speed differ — the cheapest is not always the best fit.</div>
+    <div class="offers" id="offerList" data-note="Core C2C multi-offer interaction: seller offers for one SKU, lowest online seller pre-selected. Ratings and order counts are shown up front to defuse the cheap-price-trap worry"></div>
+    <div class="drawer-ft">
+      <div class="qty" id="qtyBox"><button onclick="chgQty(-1)">−</button><span id="qtyV">1</span><button onclick="chgQty(1)">＋</button></div>
+      <span class="hint" id="offerEta"></span>
+      <div class="total">Total<span class="price" id="offerTotal">$0</span></div>
+      <button class="btn pri big" onclick="offerBuy()">Buy Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image lightbox: multi-photo + magnifier -->
+<div class="lightbox" id="lb" onclick="if(event.target===this)closeLB()">
+  <div class="lb-hd"><b id="lbTitle"></b><span class="hint" style="color:#8892A2" id="lbIdx"></span><button class="x" onclick="closeLB()">✕</button></div>
+  <div class="lb-stage">
+    <button class="lb-arrow prev" onclick="lbNav(-1)">‹</button>
+    <div class="lb-frame" id="lbFrame" data-note="Magnifier: click the image or + to zoom in; while zoomed, moving the mouse pans the lens (transform-origin follows the cursor); click again to reset. Arrows and thumbnails switch between screenshots">
+      <img id="lbImg" alt="Account screenshot">
+    </div>
+    <button class="lb-arrow next" onclick="lbNav(1)">›</button>
+  </div>
+  <div class="lb-ft">
+    <div class="lb-zoom">
+      <button onclick="lbZoomTo(lbZoom-0.6)">−</button><span id="lbZoomV">100%</span><button onclick="lbZoomTo(lbZoom+0.6)">＋</button><button onclick="lbZoomTo(1)" style="font-size:11px; width:auto; padding:0 8px">Reset</button>
+    </div>
+    <div class="lb-thumbs" id="lbThumbs"></div>
+  </div>
+</div>
+
+<div class="note-tip">Design notes on — hover any dashed outline to see the intent</div>
+
+<script>
+/* ================= i18n ================= */
+const LANGS=[['zh','中文'],['en','English'],['de','Deutsch'],['fr','Français']];
+let LANG='en', CURPAGE='home', lastAccId=null;
+const T={
+/* header / nav */
+gsearchPh:{zh:'Search in iGV — 搜索游戏、账号、代充、代练',en:'Search in iGV — games, accounts, top-up, boosting',de:'In iGV suchen — Spiele, Accounts, Aufladung, Boosting',fr:'Rechercher sur iGV — jeux, comptes, recharge, boosting'},
+seller:{zh:'卖家中心 ›',en:'Seller ›',de:'Verkäufer ›',fr:'Vendeur ›'},
+login:{zh:'登录 / 注册',en:'Log in / Sign up',de:'Anmelden / Registrieren',fr:'Connexion / Inscription'},
+notesBtn:{zh:'◎ 交互说明',en:'◎ Design notes',de:'◎ Design-Notizen',fr:'◎ Notes de design'},
+noteTip:{zh:'交互说明模式已开启 — 悬停虚线框查看设计意图',en:'Design notes on — hover any dashed outline to see the intent',de:'Design-Notizen aktiv — fahre über gestrichelte Rahmen für die Absicht',fr:'Notes de design activées — survolez les cadres en pointillés'},
+tabHome:{zh:'品类主页',en:'Overview',de:'Übersicht',fr:'Aperçu'},
+tabAcc:{zh:'账号',en:'Accounts',de:'Accounts',fr:'Comptes'},
+tabTop:{zh:'代充',en:'Top-Up',de:'Aufladung',fr:'Recharge'},
+tabBoost:{zh:'代练',en:'Boosting',de:'Boosting',fr:'Boosting'},
+crumbHome:{zh:'首页',en:'Home',de:'Start',fr:'Accueil'},
+crumbAll:{zh:'全部游戏',en:'All Games',de:'Alle Spiele',fr:'Tous les jeux'},
+crumbCheckout:{zh:'结算',en:'Checkout',de:'Kasse',fr:'Paiement'},
+crumbDone:{zh:'订单完成',en:'Order complete',de:'Bestellung abgeschlossen',fr:'Commande terminée'},
+docTitle:{zh:'IGV · Clash Royale 交易市场原型',en:'IGV · Clash Royale Marketplace Prototype',de:'IGV · Clash-Royale-Marktplatz Prototyp',fr:'IGV · Prototype Marketplace Clash Royale'},
+stub:{zh:'原型示意：跳转 {0}',en:'Prototype stub: opens {0}',de:'Prototyp-Hinweis: öffnet {0}',fr:'Maquette : ouvre {0}'},
+/* home */
+heroH:{zh:'Clash Royale 交易市场',en:'Clash Royale Marketplace',de:'Clash-Royale-Marktplatz',fr:'Marketplace Clash Royale'},
+heroP:{zh:'账号 · 代充 · 代练 — 认证卖家，资金平台托管，确认收货后放款。',en:'Accounts · Top-Up · Boosting — verified sellers, funds held in escrow, released after you confirm.',de:'Accounts · Aufladung · Boosting — verifizierte Verkäufer, Treuhand-Zahlung, Freigabe nach Bestätigung.',fr:'Comptes · Recharge · Boosting — vendeurs vérifiés, fonds sous séquestre, libérés après confirmation.'},
+statAcc:{zh:'在售账号',en:'Accounts listed',de:'Gelistete Accounts',fr:'Comptes en vente'},
+statOrders:{zh:'24h 成交订单',en:'Orders in 24h',de:'Bestellungen (24 h)',fr:'Commandes (24 h)'},
+statSellers:{zh:'活跃卖家',en:'Active sellers',de:'Aktive Verkäufer',fr:'Vendeurs actifs'},
+statRating:{zh:'好评率',en:'Positive rating',de:'Positive Bewertungen',fr:'Avis positifs'},
+bizAccH:{zh:'账号交易 <span class="tag gray">非标 · 一号一价</span>',en:'Accounts <span class="tag gray">Unique · one-off listings</span>',de:'Accounts <span class="tag gray">Unikate · Einzelstücke</span>',fr:'Comptes <span class="tag gray">Uniques · pièce par pièce</span>'},
+bizAccP:{zh:'KT16 满级号 / Hero 收集号 / 绝版表情收藏号。每个账号独立上架，字段平台核验。',en:'KT16 maxed, Hero collector and rare-emote accounts. Every listing is unique and platform-verified.',de:'KT16-Maxed-, Helden-Sammler- und Rare-Emote-Accounts. Jedes Inserat ist einzigartig und plattformgeprüft.',fr:'Comptes KT16 max, collectionneurs de héros et émotes rares. Chaque annonce est unique et vérifiée.'},
+bizAccGo:{zh:'1,284 个账号在售 · $39 起 ›',en:'1,284 accounts listed · from $39 ›',de:'1.284 Accounts gelistet · ab 39 $ ›',fr:'1 284 comptes en vente · dès 39 $ ›'},
+bizTopH:{zh:'宝石代充 <span class="tag gray">标品 · 多卖家跟卖</span>',en:'Gems Top-Up <span class="tag gray">Standardized · multi-seller</span>',de:'Juwelen-Aufladung <span class="tag gray">Standardisiert · mehrere Verkäufer</span>',fr:'Recharge de gemmes <span class="tag gray">Standard · multi-vendeurs</span>'},
+bizTopP:{zh:'宝石礼包与 Diamond Pass，低于官方价最高 22%。同一档位比价选卖家，分钟级交付。',en:'Gem packs and Diamond Pass, up to 22% below official. Compare sellers per tier, minutes-level delivery.',de:'Juwelen-Pakete und Diamond Pass, bis zu 22 % unter Offizialpreis. Verkäufer je Stufe vergleichen, Lieferung in Minuten.',fr:'Packs de gemmes et Diamond Pass, jusqu\u2019à -22 % vs officiel. Comparez les vendeurs, livraison en minutes.'},
+bizTopGo:{zh:'Diamond Pass $9.85 起 ›',en:'Diamond Pass from $9.85 ›',de:'Diamond Pass ab 9,85 $ ›',fr:'Diamond Pass dès 9,85 $ ›'},
+bizBoostH:{zh:'代练服务 <span class="tag gray">标品 · 多卖家跟卖</span>',en:'Boosting <span class="tag gray">Standardized · multi-seller</span>',de:'Boosting <span class="tag gray">Standardisiert · mehrere Verkäufer</span>',fr:'Boosting <span class="tag gray">Standard · multi-vendeurs</span>'},
+bizBoostP:{zh:'Ranked 排位上分、20 胜挑战代打、天梯推杯。全程进度可追踪，支持直播打单。',en:'Ranked climbing, 20-Win Challenge runs and trophy pushing. Fully trackable, streaming available.',de:'Ranked-Aufstieg, 20-Siege-Challenge und Trophäen-Push. Voll nachverfolgbar, Streaming möglich.',fr:'Montée en classé, défi 20 victoires et poussée de trophées. Suivi complet, streaming dispo.'},
+bizBoostGo:{zh:'排位上分 $4 / 段起 ›',en:'Ranked from $4 / division ›',de:'Ranked ab 4 $ / Liga ›',fr:'Classé dès 4 $ / division ›'},
+secFeatured:{zh:'精选账号',en:'Featured accounts',de:'Ausgewählte Accounts',fr:'Comptes en vedette'},
+secTopup:{zh:'热门代充',en:'Popular top-up',de:'Beliebte Aufladungen',fr:'Recharges populaires'},
+secBoost:{zh:'代练服务',en:'Boosting services',de:'Boosting-Services',fr:'Services de boosting'},
+viewAll:{zh:'查看全部 ›',en:'View all ›',de:'Alle ansehen ›',fr:'Voir tout ›'},
+/* accounts list */
+accH1:{zh:'Clash Royale 账号交易',en:'Clash Royale Accounts for sale',de:'Clash-Royale-Accounts kaufen',fr:'Comptes Clash Royale à vendre'},
+accSeo:{zh:'购买 Clash Royale 账号：满级号 / 收集号 / 收藏号，平台验号，支持找回赔付。',en:'Buy Clash Royale accounts: maxed, collector and rare-emote accounts. Platform-verified, recovery insurance available.',de:'Clash-Royale-Accounts kaufen: Maxed-, Sammler- und Rare-Emote-Accounts. Plattformgeprüft, Rückholversicherung verfügbar.',fr:'Achetez des comptes Clash Royale : max, collectionneurs, émotes rares. Vérifiés, assurance récupération disponible.'},
+otherGames:{zh:'其他游戏：',en:'Other games: ',de:'Weitere Spiele: ',fr:'Autres jeux : '},
+accBanner:{zh:'<span class="pain">满级要肝几个月，绝版错过即永久</span> — 直接买现成账号',en:'<span class="pain">Maxing takes months; missed exclusives are gone forever</span> — buy a ready account',de:'<span class="pain">Maxen dauert Monate; verpasste Exklusives sind für immer weg</span> — kauf einen fertigen Account',fr:'<span class="pain">Maxer prend des mois ; les exclusivités ratées sont perdues</span> — achetez un compte prêt'},
+chipMeta:{zh:'<span class="dot" style="background:#22B573"></span>7 月 meta 已更新 <b>看齐全号 ›</b>',en:'<span class="dot" style="background:#22B573"></span>July meta updated <b>See meta-ready ›</b>',de:'<span class="dot" style="background:#22B573"></span>Juli-Meta aktualisiert <b>Meta-komplette ansehen ›</b>',fr:'<span class="dot" style="background:#22B573"></span>Méta de juillet à jour <b>Voir comptes méta ›</b>'},
+chipVerified:{zh:'<span class="dot" style="background:#F5B301"></span>全部<b>平台验号</b> · 找回赔付',en:'<span class="dot" style="background:#F5B301"></span>All <b>platform-verified</b> · insured',de:'<span class="dot" style="background:#F5B301"></span>Alle <b>plattformgeprüft</b> · versichert',fr:'<span class="dot" style="background:#F5B301"></span>Tous <b>vérifiés</b> · assurés'},
+fKT:{zh:'国王塔等级',en:'King Tower level',de:'Königsturm-Level',fr:'Niveau de la tour du roi'},
+fPrice:{zh:'价格上限：$',en:'Max price: $',de:'Max. Preis: $',fr:'Prix max : $'},
+fHero:{zh:'Hero 数量 ≥ ',en:'Heroes ≥ ',de:'Helden ≥ ',fr:'Héros ≥ '},
+fRarity:{zh:'稀缺 & 交易',en:'Rarity & trade',de:'Seltenheit & Handel',fr:'Rareté & transaction'},
+fRareLbl:{zh:'含绝版表情/徽章',en:'Rare emotes / badges',de:'Seltene Emotes / Abzeichen',fr:'Émotes / badges rares'},
+fRenameLbl:{zh:'可免费改名',en:'Free rename available',de:'Kostenlose Umbenennung',fr:'Renommage gratuit dispo'},
+fEmailLbl:{zh:'含初始邮箱',en:'Original email included',de:'Original-E-Mail enthalten',fr:'E-mail d\u2019origine inclus'},
+resetF:{zh:'重置筛选',en:'Reset filters',de:'Filter zurücksetzen',fr:'Réinitialiser les filtres'},
+accQPh:{zh:'搜账号：卡名 / Hero / 表情，如 CRL 20胜',en:'Search accounts: card / hero / emote, e.g. CRL 20-Win',de:'Accounts suchen: Karte / Held / Emote, z. B. CRL 20',fr:'Rechercher : carte / héros / émote, p. ex. CRL 20'},
+accCountHtml:{zh:'共 <b id="accCount" style="color:var(--tx)">8</b> 个账号',en:'<b id="accCount" style="color:var(--tx)">8</b> accounts',de:'<b id="accCount" style="color:var(--tx)">8</b> Accounts',fr:'<b id="accCount" style="color:var(--tx)">8</b> comptes'},
+sortRec:{zh:'推荐排序',en:'Recommended',de:'Empfohlen',fr:'Recommandé'},
+sortAsc:{zh:'价格从低到高',en:'Price: low to high',de:'Preis: aufsteigend',fr:'Prix : croissant'},
+sortDesc:{zh:'价格从高到低',en:'Price: high to low',de:'Preis: absteigend',fr:'Prix : décroissant'},
+sortNew:{zh:'最新上架',en:'Newest',de:'Neueste',fr:'Nouveautés'},
+tagMeta:{zh:'meta 齐全',en:'Meta ready',de:'Meta-komplett',fr:'Prêt méta'},
+tagRare:{zh:'绝版收藏',en:'Rare collection',de:'Seltene Sammlung',fr:'Collection rare'},
+tagVerified:{zh:'已验号',en:'Verified',de:'Geprüft',fr:'Vérifié'},
+pill16:{zh:'16级卡',en:'Lv16',de:'Lv16',fr:'Niv. 16'},
+pillHeroes:{zh:'Hero',en:'Heroes',de:'Helden',fr:'Héros'},
+pillEvos:{zh:'进化',en:'Evos',de:'Evos',fr:'Évos'},
+pillGems:{zh:'宝石',en:'Gems',de:'Juwelen',fr:'Gemmes'},
+zoomHint:{zh:'🔍 点击放大 · 查看多张',en:'🔍 Click to zoom · view all',de:'🔍 Zum Zoomen klicken · alle ansehen',fr:'🔍 Cliquer pour zoomer · tout voir'},
+rareMore:{zh:' 等 {0} 项',en:' +{0} more',de:' +{0} weitere',fr:' +{0} autres'},
+buyNow:{zh:'立即购买',en:'Buy Now',de:'Jetzt kaufen',fr:'Acheter'},
+accEmpty:{zh:'没有符合条件的账号 — 放宽筛选试试，或订阅该条件的「到货提醒」',en:'No accounts match — loosen the filters, or subscribe to restock alerts for this search',de:'Keine passenden Accounts — Filter lockern oder Verfügbarkeits-Alarm für diese Suche abonnieren',fr:'Aucun compte ne correspond — élargissez les filtres ou abonnez-vous aux alertes de dispo'},
+/* account detail */
+backAcc:{zh:'‹ 返回账号列表',en:'‹ Back to Accounts',de:'‹ Zurück zu Accounts',fr:'‹ Retour aux comptes'},
+verifyVideo:{zh:'▶ 验号视频',en:'▶ Verify video',de:'▶ Prüfvideo',fr:'▶ Vidéo de vérif.'},
+battleLog:{zh:'对战记录',en:'Battle log',de:'Kampfprotokoll',fr:'Journal de combat'},
+stubVideo:{zh:'原型示意：查看平台验号视频',en:'Prototype stub: plays the platform verification video',de:'Prototyp-Hinweis: spielt das Prüfvideo ab',fr:'Maquette : lit la vidéo de vérification'},
+stubBattle:{zh:'原型示意：查看对战履历截图',en:'Prototype stub: opens battle-log screenshots',de:'Prototyp-Hinweis: öffnet Kampfprotokoll-Screenshots',fr:'Maquette : ouvre les captures du journal de combat'},
+tagFields:{zh:'字段已核验',en:'Fields verified',de:'Felder geprüft',fr:'Champs vérifiés'},
+listingNo:{zh:'编号 #CR-{0}',en:'Listing #CR-{0}',de:'Inserat #CR-{0}',fr:'Annonce #CR-{0}'},
+uniqueHint:{zh:'一号一价 · 唯一在售，售出即下架',en:'Unique listing · one in stock, delisted when sold',de:'Unikat · nur 1 verfügbar, nach Verkauf entfernt',fr:'Annonce unique · 1 en stock, retirée après vente'},
+insTitle:{zh:'找回赔付保险 <span class="hint">（买号最大顾虑=原主找回，保险直接定价该风险）</span>',en:'Recovery insurance <span class="hint">(the #1 buyer fear is owner reclaim — insurance prices that risk directly)</span>',de:'Rückholversicherung <span class="hint">(größte Käufersorge: Rückholung durch den Vorbesitzer — die Versicherung bepreist dieses Risiko)</span>',fr:'Assurance récupération <span class="hint">(la crainte n°1 : la reprise par l\u2019ancien proprio — l\u2019assurance tarifie ce risque)</span>'},
+daysWord:{zh:'天',en:'days',de:'Tage',fr:'jours'},
+included:{zh:'已含',en:'Included',de:'Inklusive',fr:'Inclus'},
+askSeller:{zh:'咨询卖家',en:'Ask seller',de:'Verkäufer fragen',fr:'Contacter le vendeur'},
+stubChat:{zh:'原型示意：打开与卖家的站内 IM，聊天记录留档作为纠纷凭证',en:'Prototype stub: opens in-platform chat with the seller; transcripts are kept as dispute evidence',de:'Prototyp-Hinweis: öffnet den Plattform-Chat; Verläufe dienen als Streitfall-Nachweis',fr:'Maquette : ouvre le chat plateforme ; l\u2019historique sert de preuve en litige'},
+guardAcc:{zh:'🛡 IGV 中介担保：付款托管 → 卖家交付账号资料 → 买家验号改绑 → 确认后放款给卖家',en:'🛡 IGV escrow: payment held → seller delivers credentials → buyer verifies &amp; rebinds → funds released on confirmation',de:'🛡 IGV-Treuhand: Zahlung hinterlegt → Verkäufer liefert Zugangsdaten → Käufer prüft &amp; bindet neu → Freigabe nach Bestätigung',fr:'🛡 Séquestre IGV : paiement bloqué → identifiants livrés → vérification &amp; réassociation → fonds libérés après confirmation'},
+zoneProg:{zh:'练度 — 能不能变强',en:'Progression — will I get stronger',de:'Fortschritt — werde ich stärker',fr:'Progression — vais-je devenir plus fort'},
+kKT:{zh:'国王塔等级',en:'King Tower',de:'Königsturm',fr:'Tour du roi'},
+kLv16:{zh:'16 级满级卡',en:'Level-16 cards',de:'Level-16-Karten',fr:'Cartes niveau 16'},
+kEvos:{zh:'进化',en:'Evolutions',de:'Evolutionen',fr:'Évolutions'},
+zoneRare:{zh:'稀缺 — 值不值这个价',en:'Rarity — is it worth the price',de:'Seltenheit — ist es den Preis wert',fr:'Rareté — vaut-il son prix'},
+kRare:{zh:'绝版',en:'Rare',de:'Selten',fr:'Rare'},
+noRare:{zh:'无绝版收藏项 — 纯练度定价',en:'No rare collectibles — priced on progression only',de:'Keine seltenen Sammlerstücke — Preis rein nach Fortschritt',fr:'Aucun objet rare — prix basé sur la progression'},
+kGems:{zh:'宝石余量',en:'Gems balance',de:'Juwelen-Guthaben',fr:'Solde de gemmes'},
+kSkins:{zh:'塔皮/限定皮肤',en:'Tower skins',de:'Turm-Skins',fr:'Skins de tour'},
+zoneTrust:{zh:'信任 — 敢不敢买',en:'Trust — is it safe to buy',de:'Vertrauen — ist der Kauf sicher',fr:'Confiance — est-ce sûr d\u2019acheter'},
+kVerif:{zh:'平台验号',en:'Platform verification',de:'Plattform-Prüfung',fr:'Vérification plateforme'},
+vOk:{zh:'字段已核验 ✓',en:'Fields verified ✓',de:'Felder geprüft ✓',fr:'Champs vérifiés ✓'},
+kRename:{zh:'免费改名',en:'Free rename',de:'Gratis-Umbenennung',fr:'Renommage gratuit'},
+renameOk:{zh:'可改名 ✓',en:'Available ✓',de:'Verfügbar ✓',fr:'Disponible ✓'},
+renameUsed:{zh:'已用完',en:'Used up',de:'Aufgebraucht',fr:'Épuisé'},
+kEmail:{zh:'初始邮箱过户',en:'Original email',de:'Original-E-Mail',fr:'E-mail d\u2019origine'},
+emailOk:{zh:'含初始邮箱 ✓',en:'Included ✓',de:'Enthalten ✓',fr:'Inclus ✓'},
+emailNo:{zh:'仅换绑',en:'Rebind only',de:'Nur Neubindung',fr:'Réassociation seule'},
+kIns:{zh:'找回赔付',en:'Recovery insurance',de:'Rückholversicherung',fr:'Assurance récupération'},
+insDays:{zh:'30 / 90 / 180 天可选',en:'30 / 90 / 180 days',de:'30 / 90 / 180 Tage',fr:'30 / 90 / 180 jours'},
+cardListH:{zh:'16 级卡清单',en:'Level-16 card list',de:'Level-16-Kartenliste',fr:'Liste des cartes niveau 16'},
+cardListTag:{zh:'高亮 = 当前 7 月 meta',en:'Highlighted = current July meta',de:'Hervorgehoben = aktuelle Juli-Meta',fr:'Surligné = méta de juillet'},
+moreCards:{zh:'+ 其余 {0} 张',en:'+ {0} more',de:'+ {0} weitere',fr:'+ {0} autres'},
+stubCards:{zh:'原型示意：展开全部 {0} 张满级卡清单',en:'Prototype stub: expands the full list of {0} maxed cards',de:'Prototyp-Hinweis: zeigt alle {0} Maxed-Karten',fr:'Maquette : affiche les {0} cartes max'},
+sellerVerified:{zh:'实名认证卖家',en:'ID-verified seller',de:'Identitätsgeprüfter Verkäufer',fr:'Vendeur vérifié'},
+ordersDone:{zh:'累计成交 {0} 单',en:'{0} orders completed',de:'{0} Bestellungen abgeschlossen',fr:'{0} commandes réalisées'},
+avgDelivery:{zh:'平均发货 2 小时',en:'avg. delivery 2 h',de:'Ø Lieferung 2 h',fr:'livraison moy. 2 h'},
+visitStore:{zh:'进入店铺',en:'Visit store',de:'Shop besuchen',fr:'Voir la boutique'},
+stubStore:{zh:'原型示意：跳转该卖家店铺页，查看其全部在售账号',en:'Prototype stub: opens this seller\u2019s store with all their listings',de:'Prototyp-Hinweis: öffnet den Shop dieses Verkäufers',fr:'Maquette : ouvre la boutique de ce vendeur'},
+flowH:{zh:'交易流程',en:'How the trade works',de:'So läuft der Handel',fr:'Déroulement de la transaction'},
+step1:{zh:'付款至平台托管',en:'Payment held in escrow',de:'Zahlung in Treuhand',fr:'Paiement sous séquestre'},
+step2:{zh:'卖家提供账号资料',en:'Seller delivers credentials',de:'Verkäufer liefert Zugangsdaten',fr:'Le vendeur livre les identifiants'},
+step3:{zh:'买家登录验号',en:'Buyer verifies account',de:'Käufer prüft den Account',fr:'L\u2019acheteur vérifie le compte'},
+step4:{zh:'改密 · 换绑邮箱',en:'Change password & email',de:'Passwort & E-Mail ändern',fr:'Changer mot de passe & e-mail'},
+step5:{zh:'确认收货 · 放款',en:'Confirm & release funds',de:'Bestätigen & Freigabe',fr:'Confirmer & libérer les fonds'},
+/* topup */
+topH1:{zh:'Clash Royale 宝石代充 & Diamond Pass',en:'Clash Royale Top-Up · Gems & Diamond Pass',de:'Clash Royale Aufladung · Juwelen & Diamond Pass',fr:'Recharge Clash Royale · Gemmes & Diamond Pass'},
+topSeo:{zh:'宝石与 Diamond Pass 代充，多卖家比价低于官方价，最快 15 分钟交付。',en:'Gems and Diamond Pass top-up, multi-seller prices below official, delivery from 15 minutes.',de:'Juwelen- und Diamond-Pass-Aufladung, Multi-Verkäufer-Preise unter Offizialpreis, Lieferung ab 15 Minuten.',fr:'Recharge gemmes et Diamond Pass, prix multi-vendeurs sous l\u2019officiel, livraison dès 15 minutes.'},
+topBanner:{zh:'<span class="pain">Pass 月底清零，奖励过期不候</span> — 比官方最高省 22%',en:'<span class="pain">The Pass resets monthly; unclaimed rewards expire</span> — save up to 22% vs official',de:'<span class="pain">Der Pass resettet monatlich; nicht abgeholte Belohnungen verfallen</span> — bis zu 22 % sparen',fr:'<span class="pain">Le Pass se réinitialise chaque mois ; les récompenses expirent</span> — jusqu\u2019à -22 %'},
+chipPass:{zh:'<span class="dot" style="background:#F5B301"></span>Pass 赛季剩 <b>13 天</b><span class="cta">立即续充 ›</span>',en:'<span class="dot" style="background:#F5B301"></span>Pass season ends in <b>13 days</b><span class="cta">Renew ›</span>',de:'<span class="dot" style="background:#F5B301"></span>Pass-Saison endet in <b>13 Tagen</b><span class="cta">Verlängern ›</span>',fr:'<span class="dot" style="background:#F5B301"></span>La saison du Pass finit dans <b>13 jours</b><span class="cta">Renouveler ›</span>'},
+chipFast:{zh:'<span class="dot" style="background:#22B573"></span>最快 <b>15 分钟</b>交付',en:'<span class="dot" style="background:#22B573"></span>Delivery from <b>15 min</b>',de:'<span class="dot" style="background:#22B573"></span>Lieferung ab <b>15 Min</b>',fr:'<span class="dot" style="background:#22B573"></span>Livraison dès <b>15 min</b>'},
+skuQPh:{zh:'搜代充商品：宝石 / Pass / 档位',en:'Search top-up: gems / pass / tier',de:'Aufladung suchen: Juwelen / Pass / Stufe',fr:'Rechercher : gemmes / pass / palier'},
+deliveryLegend:{zh:'交付方式：<span class="tag info">好友赠送</span> 无需密码 · <span class="tag gray">登录代充</span> 更快',en:'Delivery: <span class="tag info">Gift via friend</span> no password · <span class="tag gray">Login top-up</span> faster',de:'Lieferung: <span class="tag info">Geschenk über Freund</span> ohne Passwort · <span class="tag gray">Login-Aufladung</span> schneller',fr:'Livraison : <span class="tag info">Cadeau via ami</span> sans mot de passe · <span class="tag gray">Par connexion</span> plus rapide'},
+howH:{zh:'代充说明',en:'How top-up works',de:'So funktioniert die Aufladung',fr:'Comment fonctionne la recharge'},
+topKv1k:{zh:'交付时效',en:'Delivery time',de:'Lieferzeit',fr:'Délai de livraison'},
+topKv1v:{zh:'好友赠送需先加好友（约 1–24h）；登录代充通常 15–60 分钟',en:'Gift via friend needs a friend request first (~1–24 h); login top-up usually takes 15–60 min',de:'Geschenk über Freund braucht erst eine Freundschaftsanfrage (~1–24 h); Login-Aufladung meist 15–60 Min',fr:'Le cadeau via ami nécessite une demande d\u2019ami (~1–24 h) ; par connexion : 15–60 min'},
+topKv2k:{zh:'安全说明',en:'Safety',de:'Sicherheit',fr:'Sécurité'},
+topKv2v:{zh:'登录代充使用官方渠道充值，不涉及第三方黑卡；交付完成前资金由平台托管',en:'Login top-up uses official store channels only — no third-party stolen cards; funds stay in escrow until delivery completes',de:'Login-Aufladung nur über offizielle Store-Kanäle — keine gestohlenen Karten; Geld bleibt bis zur Lieferung in Treuhand',fr:'Recharge via les canaux officiels uniquement — pas de cartes volées ; fonds sous séquestre jusqu\u2019à la livraison'},
+topKv3k:{zh:'所需信息',en:'What we need',de:'Benötigte Angaben',fr:'Informations requises'},
+topKv3v:{zh:'好友赠送：玩家标签（#Tag）；登录代充：Supercell ID 邮箱 + 验证码（下单后在订单聊天中提供）',en:'Gift via friend: your Player Tag (#Tag); login top-up: Supercell ID email + verification code (shared in order chat after purchase)',de:'Geschenk über Freund: dein Player-Tag (#Tag); Login-Aufladung: Supercell-ID-E-Mail + Code (nach Kauf im Bestell-Chat)',fr:'Cadeau via ami : votre Player Tag (#Tag) ; par connexion : e-mail Supercell ID + code (partagé dans le chat de commande)'},
+gemsName:{zh:'{0} 宝石',en:'{0} Gems',de:'{0} Juwelen',fr:'{0} gemmes'},
+bonusSub:{zh:'+{0} 赠送',en:'+{0} bonus',de:'+{0} Bonus',fr:'+{0} bonus'},
+passName:{zh:'Diamond Pass · 7月赛季',en:'Diamond Pass · July Season',de:'Diamond Pass · Juli-Saison',fr:'Diamond Pass · Saison de juillet'},
+passSub:{zh:'月度通行证 · 赛季结束清零',en:'Monthly pass · resets at season end',de:'Monatspass · Reset am Saisonende',fr:'Passe mensuel · remis à zéro en fin de saison'},
+tagMonthly:{zh:'月度订阅 · 赛季剩 13 天',en:'Monthly · 13 days left',de:'Monatlich · noch 13 Tage',fr:'Mensuel · 13 jours restants'},
+fromWord:{zh:'起',en:'from',de:'ab',fr:'dès'},
+officialP:{zh:'官方 ${0}',en:'Official ${0}',de:'Offiziell {0} $',fr:'Officiel {0} $'},
+saveP:{zh:'省 {0}%',en:'Save {0}%',de:'Spare {0} %',fr:'-{0} %'},
+skuFoot:{zh:'5 个卖家跟卖 · 最快 15 分钟',en:'5 seller offers · from 15 min',de:'5 Verkäufer-Angebote · ab 15 Min',fr:'5 offres · dès 15 min'},
+skuEmpty:{zh:'没有匹配的代充商品',en:'No top-up products match',de:'Keine passenden Aufladungs-Produkte',fr:'Aucun produit de recharge ne correspond'},
+/* offer drawer */
+chooseSeller:{zh:' · 选择卖家',en:' · Choose a seller',de:' · Verkäufer wählen',fr:' · Choisir un vendeur'},
+drawerHint:{zh:'同一标准商品，按价格从低到高排列。卖家信用、交付方式、时效可能不同 — 低价≠最优，请综合选择。',en:'Same standardized product, sorted by price. Seller credit, delivery method and speed differ — the cheapest is not always the best fit.',de:'Gleiches Standardprodukt, nach Preis sortiert. Bewertung, Liefermethode und Tempo variieren — das Billigste ist nicht immer das Beste.',fr:'Même produit standard, trié par prix. Réputation, méthode et rapidité varient — le moins cher n\u2019est pas toujours le meilleur.'},
+online:{zh:'在线',en:'Online',de:'Online',fr:'En ligne'},
+offline:{zh:'离线',en:'Offline',de:'Offline',fr:'Hors ligne'},
+lowest:{zh:'最低价',en:'Lowest price',de:'Bester Preis',fr:'Prix le plus bas'},
+ordersN:{zh:'成交 {0} 单',en:'{0} orders',de:'{0} Bestellungen',fr:'{0} commandes'},
+estDelivery:{zh:'预计交付：{0}',en:'Est. delivery: {0}',de:'Voraus. Lieferung: {0}',fr:'Livraison est. : {0}'},
+totalWord:{zh:'合计',en:'Total',de:'Gesamt',fr:'Total'},
+passRemind:{zh:'下赛季开启时提醒我续充（Pass 月底清零，月月要买 — 复购触达点随下单一并订阅）',en:'Remind me to renew when the next season starts (Pass resets monthly — subscribe to the repeat-purchase nudge with this order)',de:'Erinnere mich zur neuen Saison ans Verlängern (der Pass resettet monatlich — Abo der Erinnerung mit dieser Bestellung)',fr:'Me rappeler de renouveler à la prochaine saison (le Pass se réinitialise chaque mois — rappel activé avec cette commande)'},
+deliveryGift:{zh:'好友赠送',en:'Gift via friend',de:'Geschenk über Freund',fr:'Cadeau via ami'},
+deliveryLogin:{zh:'登录代充',en:'Login top-up',de:'Login-Aufladung',fr:'Recharge par connexion'},
+etaGift:{zh:'1–24 小时',en:'1–24 h',de:'1–24 h',fr:'1–24 h'},
+etaLogin:{zh:'15–60 分钟',en:'15–60 min',de:'15–60 Min',fr:'15–60 min'},
+/* boosting */
+boostH1:{zh:'Clash Royale 代练服务',en:'Clash Royale Boosting',de:'Clash-Royale-Boosting',fr:'Boosting Clash Royale'},
+boostSeo:{zh:'排位上分 / 挑战代打 / 天梯推杯，实时估价选打手，进度可追踪。',en:'Ranked climbing, challenge runs and trophy pushing. Live quotes, pick your booster, track progress.',de:'Ranked-Aufstieg, Challenge-Runs und Trophäen-Push. Live-Preise, Booster wählen, Fortschritt verfolgen.',fr:'Montée en classé, défis et poussée de trophées. Devis en direct, choix du booster, suivi complet.'},
+boostBanner:{zh:'<span class="pain">打不动 20 胜？没时间上分？</span> — 交给认证打手',en:'<span class="pain">Can\u2019t hit 20 wins? No time to climb?</span> — hire a verified booster',de:'<span class="pain">20 Siege zu schwer? Keine Zeit zum Klettern?</span> — hol dir einen geprüften Booster',fr:'<span class="pain">20 victoires trop dur ? Pas le temps de grimper ?</span> — engagez un booster vérifié'},
+chip20:{zh:'<span class="dot" style="background:#D33A2F"></span>20 胜挑战剩 <b>4 天</b><span class="cta">代打 ›</span>',en:'<span class="dot" style="background:#D33A2F"></span>20-Win Challenge ends in <b>4 days</b><span class="cta">Order ›</span>',de:'<span class="dot" style="background:#D33A2F"></span>20-Siege-Challenge endet in <b>4 Tagen</b><span class="cta">Bestellen ›</span>',fr:'<span class="dot" style="background:#D33A2F"></span>Défi 20 victoires : <b>4 jours</b> restants<span class="cta">Commander ›</span>'},
+chipRanked:{zh:'<span class="dot" style="background:#FF6A2B"></span>Ranked 重置倒计时 <b>13 天</b><span class="cta">上分 ›</span>',en:'<span class="dot" style="background:#FF6A2B"></span>Ranked resets in <b>13 days</b><span class="cta">Climb ›</span>',de:'<span class="dot" style="background:#FF6A2B"></span>Ranked-Reset in <b>13 Tagen</b><span class="cta">Aufsteigen ›</span>',fr:'<span class="dot" style="background:#FF6A2B"></span>Reset classé dans <b>13 jours</b><span class="cta">Grimper ›</span>'},
+svcQPh:{zh:'搜代练服务：排位 / 20胜 / 推杯',en:'Search boosting: ranked / 20-win / trophies',de:'Boosting suchen: Ranked / 20 Siege / Trophäen',fr:'Rechercher : classé / 20 victoires / trophées'},
+svcEmpty:{zh:'没有匹配的代练服务',en:'No boosting services match',de:'Keine passenden Boosting-Services',fr:'Aucun service de boosting ne correspond'},
+configureBuy:{zh:'配置下单 ›',en:'Configure & Buy ›',de:'Konfigurieren & kaufen ›',fr:'Configurer & acheter ›'},
+backBoost:{zh:'‹ 返回代练服务',en:'‹ Back to Boosting',de:'‹ Zurück zu Boosting',fr:'‹ Retour au boosting'},
+cfgH:{zh:'① 配置需求',en:'① Configure',de:'① Konfigurieren',fr:'① Configurer'},
+chooseBooster:{zh:'② 选择打手',en:'② Choose a booster',de:'② Booster wählen',fr:'② Choisir un booster'},
+offerFormula:{zh:'跟卖报价 = 基础估价 × 打手系数',en:'Offer = base estimate × booster factor',de:'Angebot = Basispreis × Booster-Faktor',fr:'Offre = estimation × facteur du booster'},
+curRank:{zh:'当前段位',en:'Current rank',de:'Aktueller Rang',fr:'Rang actuel'},
+tgtRank:{zh:'目标段位',en:'Target rank',de:'Zielrang',fr:'Rang cible'},
+curTro:{zh:'当前杯数',en:'Current trophies',de:'Aktuelle Trophäen',fr:'Trophées actuels'},
+tgtTro:{zh:'目标杯数',en:'Target trophies',de:'Ziel-Trophäen',fr:'Trophées cibles'},
+optStream:{zh:'直播打单（可旁观全程）',en:'Streamed boosting (watch live)',de:'Boosting im Stream (live zuschauen)',fr:'Boosting streamé (à suivre en direct)'},
+optRush:{zh:'加急 24 小时完成',en:'Rush — done in 24 h',de:'Express — fertig in 24 h',fr:'Express — fini en 24 h'},
+optRefund:{zh:'不成功全额退款保障',en:'Full refund if not completed',de:'Volle Erstattung bei Nichterfüllung',fr:'Remboursement intégral si échec'},
+rankedHint:{zh:'⏱ 段位每月重置 — 下单后可开启「每月自动提醒」，赛季重置前 3 天推送续单入口。',en:'⏱ Ranks reset monthly — enable auto-reminders and we will nudge you 3 days before each reset.',de:'⏱ Ränge resetten monatlich — aktiviere Auto-Erinnerungen, wir melden uns 3 Tage vor jedem Reset.',fr:'⏱ Les rangs se réinitialisent chaque mois — activez les rappels, on vous prévient 3 jours avant.'},
+ch20Hint:{zh:'⏳ 本期挑战剩余 4 天，逾期奖励绝版 — 打手接单量有限，建议尽早下单。',en:'⏳ 4 days left in this challenge — rewards retire after it ends and booster slots are limited.',de:'⏳ Noch 4 Tage — danach verschwinden die Belohnungen und Booster-Plätze sind begrenzt.',fr:'⏳ 4 jours restants — les récompenses disparaissent ensuite et les places de boosters sont limitées.'},
+trophyHint:{zh:'杯段越高单价越高：7000 杯以下 $3/500 杯 · 7000–9000 $5 · 9000–11000 $8 · 11000+ $12。',en:'Higher brackets cost more: below 7,000 — $3/500 · 7,000–9,000 — $5 · 9,000–11,000 — $8 · 11,000+ — $12.',de:'Höhere Bereiche kosten mehr: unter 7.000 — 3 $/500 · 7.000–9.000 — 5 $ · 9.000–11.000 — 8 $ · 11.000+ — 12 $.',fr:'Plus le palier est haut, plus c\u2019est cher : <7 000 — 3 $/500 · 7 000–9 000 — 5 $ · 9 000–11 000 — 8 $ · 11 000+ — 12 $.'},
+tier12b:{zh:'12 胜保底包',en:'12-Win package',de:'12-Siege-Paket',fr:'Pack 12 victoires'},
+tier12s:{zh:'拿到主要奖励 · $25',en:'Core rewards · $25',de:'Hauptbelohnungen · 25 $',fr:'Récompenses clés · 25 $'},
+tier20b:{zh:'20 胜通关包',en:'20-Win full clear',de:'20-Siege-Komplett',fr:'Pack 20 victoires'},
+tier20s:{zh:'限定表情到手 · $89',en:'Exclusive emote · $89',de:'Exklusive Emote · 89 $',fr:'Émote exclusive · 89 $'},
+range12:{zh:'12 胜保底',en:'12-Win package',de:'12-Siege-Paket',fr:'Pack 12 victoires'},
+range20:{zh:'20 胜通关',en:'20-Win full clear',de:'20-Siege-Komplett',fr:'Pack 20 victoires'},
+streamsLive:{zh:'支持直播',en:'Streams live',de:'Streamt live',fr:'Streame en direct'},
+jobsDone:{zh:'完成 {0} 单',en:'{0} jobs done',de:'{0} Aufträge erledigt',fr:'{0} missions réalisées'},
+newBooster:{zh:' · 新打手让利',en:' · new-booster discount',de:' · Neuling-Rabatt',fr:' · remise nouveau booster'},
+approxDays:{zh:'约 {0} 天',en:'~{0} days',de:'~{0} Tage',fr:'~{0} jours'},
+daysRange:{zh:'{0}–{1} 天',en:'{0}–{1} days',de:'{0}–{1} Tage',fr:'{0}–{1} jours'},
+sumH:{zh:'订单概要',en:'Order summary',de:'Bestellübersicht',fr:'Récapitulatif'},
+kService:{zh:'服务',en:'Service',de:'Service',fr:'Service'},
+kScope:{zh:'范围',en:'Scope',de:'Umfang',fr:'Portée'},
+estPrice:{zh:'预估价格',en:'Est. price',de:'Voraus. Preis',fr:'Prix estimé'},
+estTime:{zh:'预计工期',en:'Est. time',de:'Voraus. Dauer',fr:'Durée estimée'},
+submitOrder:{zh:'提交订单',en:'Submit order',de:'Bestellung aufgeben',fr:'Passer commande'},
+guardBoost:{zh:'🛡 托管交易：按进度节点分段放款 · 订单页实时同步段位/杯数变化与战绩截图',en:'🛡 Escrow: funds released by progress milestones · order page syncs rank/trophy changes and battle screenshots live',de:'🛡 Treuhand: Freigabe nach Fortschritts-Meilensteinen · Bestellseite zeigt Rang-/Trophäen-Änderungen und Screenshots live',fr:'🛡 Séquestre : fonds libérés par étapes · la page de commande suit rang/trophées et captures en direct'},
+baseEst:{zh:'基础估价',en:'Base estimate',de:'Basispreis',fr:'Estimation de base'},
+inclCalc:{zh:'已计入',en:'Included',de:'Enthalten',fr:'Inclus'},
+feeStream:{zh:'直播打单 +10%',en:'Streamed boosting +10%',de:'Stream-Boosting +10 %',fr:'Boosting streamé +10 %'},
+feeRush:{zh:'加急 +25%',en:'Rush 24h +25%',de:'Express 24 h +25 %',fr:'Express 24 h +25 %'},
+feeRefund:{zh:'不成功退款 +20%',en:'Refund guarantee +20%',de:'Erstattungsgarantie +20 %',fr:'Garantie remboursement +20 %'},
+sellerLbl:{zh:'卖家：{0}',en:'Seller: {0}',de:'Verkäufer: {0}',fr:'Vendeur : {0}'},
+boosterLbl:{zh:'打手：{0}',en:'Booster: {0}',de:'Booster: {0}',fr:'Booster : {0}'},
+/* checkout */
+backStep:{zh:'‹ 返回上一步',en:'‹ Back',de:'‹ Zurück',fr:'‹ Retour'},
+confirmH:{zh:'确认订单',en:'Confirm order',de:'Bestellung bestätigen',fr:'Confirmer la commande'},
+dTitle:{zh:'交付信息（{0}）',en:'Delivery info ({0})',de:'Lieferangaben ({0})',fr:'Infos de livraison ({0})'},
+typeAcc:{zh:'账号交易',en:'Account',de:'Account',fr:'Compte'},
+typeTop:{zh:'代充',en:'Top-Up',de:'Aufladung',fr:'Recharge'},
+typeBoost:{zh:'代练',en:'Boosting',de:'Boosting',fr:'Boosting'},
+coAccLbl:{zh:'接收账号资料的邮箱（交付凭证与验号指引发送至此）',en:'Email to receive account credentials (delivery proof and verification guide are sent here)',de:'E-Mail für die Zugangsdaten (Liefernachweis und Prüfanleitung gehen hierhin)',fr:'E-mail pour recevoir les identifiants (preuve de livraison et guide de vérification)'},
+coAccHint:{zh:'交付流程：付款托管 → 卖家 2 小时内提供账号资料 → 你登录验号（对照详情页已核验字段）→ 改密换绑 → 确认收货放款。发现货不对板可一键发起「字段不符」仲裁。',en:'Flow: payment held in escrow → seller delivers credentials within 2 h → you log in and verify against the listed fields → change password and rebind email → confirm to release funds. If anything mismatches, open a field-mismatch dispute in one click.',de:'Ablauf: Zahlung in Treuhand → Zugangsdaten binnen 2 h → du prüfst gegen die gelisteten Felder → Passwort ändern & E-Mail neu binden → bestätigen zur Freigabe. Bei Abweichungen mit einem Klick Streitfall eröffnen.',fr:'Déroulé : paiement bloqué → identifiants sous 2 h → vérification des champs listés → changement du mot de passe et de l\u2019e-mail → confirmation pour libérer les fonds. En cas d\u2019écart, ouvrez un litige en un clic.'},
+coTagLbl:{zh:'玩家标签 Player Tag（游戏内个人资料页复制，格式 #XXXXXXXX）',en:'Player Tag (copy from your in-game profile, format #XXXXXXXX)',de:'Player-Tag (aus deinem Spielprofil kopieren, Format #XXXXXXXX)',fr:'Player Tag (à copier depuis votre profil en jeu, format #XXXXXXXX)'},
+coTagHint:{zh:'卖家将发送好友请求 → 你通过后由礼物功能交付。全程无需提供密码。',en:'The seller sends a friend request → once accepted, gems are delivered via the gift feature. No password ever needed.',de:'Der Verkäufer sendet eine Freundschaftsanfrage → nach Annahme Lieferung per Geschenkfunktion. Nie ein Passwort nötig.',fr:'Le vendeur envoie une demande d\u2019ami → après acceptation, livraison via la fonction cadeau. Aucun mot de passe requis.'},
+coLoginLbl:{zh:'Supercell ID 登录邮箱',en:'Supercell ID email',de:'Supercell-ID-E-Mail',fr:'E-mail Supercell ID'},
+coLoginPh:{zh:'登录邮箱，验证码在订单聊天中提供',en:'Login email — verification code shared in order chat',de:'Login-E-Mail — Code kommt im Bestell-Chat',fr:'E-mail de connexion — code partagé dans le chat'},
+coLoginHint:{zh:'登录代充期间请勿修改密码；交付完成会附充值成功截图，确认后放款。若担心安全可返回选择「好友赠送」卖家。',en:'Do not change your password during delivery; a top-up screenshot is attached on completion, funds release after you confirm. Prefer not to share login? Pick a Gift-via-friend seller instead.',de:'Während der Lieferung das Passwort nicht ändern; nach Abschluss gibt es einen Screenshot, Freigabe nach deiner Bestätigung. Lieber kein Login teilen? Wähle einen Geschenk-Verkäufer.',fr:'Ne changez pas votre mot de passe pendant la livraison ; une capture est jointe à la fin, fonds libérés après confirmation. Vous préférez ne pas partager vos accès ? Choisissez un vendeur « cadeau via ami ».'},
+coBoostLbl:{zh:'Supercell ID 登录邮箱（打手上号使用）',en:'Supercell ID email (used by the booster to log in)',de:'Supercell-ID-E-Mail (für den Booster-Login)',fr:'E-mail Supercell ID (utilisé par le booster)'},
+coWinLbl:{zh:'上号时间偏好',en:'Preferred play window',de:'Bevorzugtes Spielzeitfenster',fr:'Créneau de jeu préféré'},
+coWin1:{zh:'任意时间（最快开始）',en:'Any time (fastest start)',de:'Jederzeit (schnellster Start)',fr:'N\u2019importe quand (démarrage rapide)'},
+coWin2:{zh:'仅工作日白天',en:'Weekday daytime only',de:'Nur werktags tagsüber',fr:'Semaine en journée uniquement'},
+coWin3:{zh:'仅夜间 22:00 后',en:'Nights after 10 PM only',de:'Nur nachts nach 22 Uhr',fr:'Uniquement après 22 h'},
+coBoostHint:{zh:'下单后订单页生成进度时间线：接单 → 打单中（实时段位/杯数 + 战绩截图流）→ 完成验收 → 请立即改密。每次段位变动推送通知。',en:'A progress timeline is created on your order page: accepted → boosting (live rank/trophies + battle screenshots) → review → change your password right away. Every rank change triggers a notification.',de:'Auf der Bestellseite entsteht eine Zeitleiste: angenommen → Boosting (Live-Rang/Trophäen + Screenshots) → Abnahme → sofort Passwort ändern. Jede Rangänderung löst eine Benachrichtigung aus.',fr:'Une chronologie se crée sur votre commande : acceptée → boosting (rang/trophées en direct + captures) → validation → changez vite votre mot de passe. Chaque changement de rang notifie.'},
+payH:{zh:'支付方式',en:'Payment method',de:'Zahlungsmethode',fr:'Moyen de paiement'},
+payBalance:{zh:'IGV 余额',en:'IGV Balance',de:'IGV-Guthaben',fr:'Solde IGV'},
+balAvail:{zh:'可用 $52.40',en:'$52.40 available',de:'52,40 $ verfügbar',fr:'52,40 $ disponibles'},
+payCard:{zh:'信用卡 / 借记卡',en:'Credit / Debit card',de:'Kredit- / Debitkarte',fr:'Carte bancaire'},
+promoH:{zh:'优惠',en:'Promo',de:'Rabatt',fr:'Promo'},
+promoPh:{zh:'优惠码',en:'Promo code',de:'Rabattcode',fr:'Code promo'},
+applyBtn:{zh:'使用',en:'Apply',de:'Einlösen',fr:'Appliquer'},
+feeK:{zh:'平台服务费 2%（含担保托管）',en:'Platform fee 2% (escrow included)',de:'Plattformgebühr 2 % (inkl. Treuhand)',fr:'Frais plateforme 2 % (séquestre inclus)'},
+totalDue:{zh:'应付合计',en:'Total due',de:'Gesamtbetrag',fr:'Total à payer'},
+agreeTxt:{zh:'我已阅读并同意《交易服务协议》与《{0}》',en:'I have read and agree to the Trading Service Agreement and the {0}',de:'Ich habe die Handels-AGB und die {0} gelesen und akzeptiere sie',fr:'J\u2019ai lu et j\u2019accepte les CGV et les {0}'},
+termsAcc:{zh:'账号找回赔付条款',en:'Account Recovery Insurance Terms',de:'Bedingungen der Rückholversicherung',fr:'Conditions d\u2019assurance récupération'},
+termsTop:{zh:'代充服务条款',en:'Top-Up Service Terms',de:'Aufladungs-Bedingungen',fr:'Conditions du service de recharge'},
+termsBoost:{zh:'代练托管条款',en:'Boosting Escrow Terms',de:'Boosting-Treuhand-Bedingungen',fr:'Conditions du séquestre boosting'},
+placeOrder:{zh:'提交订单并付款 ${0}',en:'Place order & pay ${0}',de:'Bestellen & {0} $ zahlen',fr:'Commander & payer {0} $'},
+guardCoAcc:{zh:'🛡 资金由 IGV 托管，确认收货后放款给卖家；纠纷可发起平台仲裁。',en:'🛡 Funds held by IGV escrow — released to the seller after you confirm; disputes go to platform arbitration.',de:'🛡 Geld in IGV-Treuhand — Freigabe an den Verkäufer nach deiner Bestätigung; Streitfälle gehen in die Plattform-Schlichtung.',fr:'🛡 Fonds sous séquestre IGV — libérés au vendeur après confirmation ; litiges arbitrés par la plateforme.'},
+guardCoBoost:{zh:'🛡 资金由 IGV 托管，按进度分段放款；纠纷可发起平台仲裁。',en:'🛡 Funds held by IGV escrow — released by progress milestones; disputes go to platform arbitration.',de:'🛡 Geld in IGV-Treuhand — Freigabe nach Fortschritts-Meilensteinen; Streitfälle in die Schlichtung.',fr:'🛡 Fonds sous séquestre IGV — libérés par étapes ; litiges arbitrés par la plateforme.'},
+alertAgree:{zh:'请先勾选同意服务协议',en:'Please agree to the service terms first',de:'Bitte zuerst den Bedingungen zustimmen',fr:'Veuillez d\u2019abord accepter les conditions'},
+unitPrice:{zh:'单价 × {0}',en:'Unit price × {0}',de:'Einzelpreis × {0}',fr:'Prix unitaire × {0}'},
+vsOfficial:{zh:'官方价对比',en:'vs official price',de:'vs. Offizialpreis',fr:'vs prix officiel'},
+saveAmt:{zh:'省 ${0}',en:'Save ${0}',de:'Spare {0} $',fr:'Économie {0} $'},
+accPrice:{zh:'账号价格',en:'Account price',de:'Account-Preis',fr:'Prix du compte'},
+insLine:{zh:'找回赔付保险 {0} 天',en:'Recovery insurance {0} days',de:'Rückholversicherung {0} Tage',fr:'Assurance récupération {0} jours'},
+ins30Line:{zh:'含 30 天找回赔付保险',en:'incl. 30-day recovery insurance',de:'inkl. 30 Tage Rückholversicherung',fr:'assurance récupération 30 j incluse'},
+estPrefix:{zh:'预计 {0}',en:'est. {0}',de:'ca. {0}',fr:'est. {0}'},
+/* success */
+orderPlaced:{zh:'订单已提交',en:'Order placed',de:'Bestellung aufgegeben',fr:'Commande passée'},
+orderNo:{zh:'订单号 {0} · {1}',en:'Order {0} · {1}',de:'Bestellung {0} · {1}',fr:'Commande {0} · {1}'},
+nextH:{zh:'接下来：',en:'Next steps:',de:'Nächste Schritte:',fr:'Prochaines étapes :'},
+nA1:{zh:'卖家将在 2 小时内于订单聊天中提供账号资料',en:'The seller will share account credentials in order chat within 2 hours',de:'Der Verkäufer teilt die Zugangsdaten binnen 2 Stunden im Bestell-Chat',fr:'Le vendeur partagera les identifiants dans le chat sous 2 heures'},
+nA2:{zh:'请按验号清单核对详情页字段，随后改密并换绑邮箱',en:'Verify the listed fields against the checklist, then change the password and rebind the email',de:'Prüfe die Felder gegen die Checkliste, ändere dann Passwort und E-Mail-Bindung',fr:'Vérifiez les champs listés, puis changez le mot de passe et l\u2019e-mail'},
+nA3:{zh:'确认收货后放款；保险期内被找回可发起赔付',en:'Funds release after you confirm; if the account is reclaimed within the insurance window, file a claim',de:'Freigabe nach deiner Bestätigung; bei Rückholung im Versicherungszeitraum Anspruch einreichen',fr:'Fonds libérés après confirmation ; en cas de reprise pendant l\u2019assurance, déposez une réclamation'},
+nT1:{zh:'卖家已接单，请留意订单聊天（好友请求 / 验证码）',en:'Seller accepted — watch order chat for the friend request / verification code',de:'Verkäufer hat angenommen — achte im Chat auf Freundschaftsanfrage / Code',fr:'Vendeur accepté — surveillez le chat (demande d\u2019ami / code)'},
+nT2:{zh:'交付完成后附充值截图，请核对后确认收货',en:'A top-up screenshot is attached on delivery; check it, then confirm receipt',de:'Bei Lieferung gibt es einen Screenshot; prüfen und Empfang bestätigen',fr:'Une capture est jointe à la livraison ; vérifiez puis confirmez'},
+nT3:{zh:'已为你开启下赛季 Pass 续充提醒',en:'Next-season Pass renewal reminder is now on for you',de:'Die Pass-Erinnerung für die nächste Saison ist jetzt aktiv',fr:'Le rappel de renouvellement du Pass est activé'},
+nB1:{zh:'打手接单后开始打单，订单页可查看实时进度时间线',en:'Boosting starts once accepted — track the live progress timeline on your order page',de:'Boosting startet nach Annahme — verfolge die Live-Zeitleiste auf der Bestellseite',fr:'Le boosting démarre après acceptation — suivez la chronologie en direct'},
+nB2:{zh:'每次段位/杯数变动将推送通知，支持随时查看战绩截图',en:'Every rank/trophy change triggers a notification, with battle screenshots on demand',de:'Jede Rang-/Trophäen-Änderung löst eine Benachrichtigung aus, Screenshots auf Abruf',fr:'Chaque changement de rang/trophées notifie, captures sur demande'},
+nB3:{zh:'完成验收后请立即修改密码；下赛季重置前 3 天将提醒续单',en:'Change your password right after review; we will remind you 3 days before next season resets',de:'Ändere nach der Abnahme sofort dein Passwort; wir erinnern 3 Tage vor dem Saison-Reset',fr:'Changez votre mot de passe après validation ; rappel 3 jours avant le reset'},
+viewOrder:{zh:'查看订单',en:'View order',de:'Bestellung ansehen',fr:'Voir la commande'},
+stubOrder:{zh:'原型示意：跳转订单详情，含进度时间线与订单聊天',en:'Prototype stub: opens order detail with progress timeline and order chat',de:'Prototyp-Hinweis: öffnet Bestelldetails mit Zeitleiste und Chat',fr:'Maquette : ouvre le détail avec chronologie et chat'},
+backHome:{zh:'返回品类主页',en:'Back to overview',de:'Zur Übersicht',fr:'Retour à l\u2019aperçu'},
+/* lightbox */
+resetZoom:{zh:'重置',en:'Reset',de:'Zurücksetzen',fr:'Réinitialiser'},
+shotSample:{zh:'示意截图 · 实际由卖家上传并经平台核验',en:'Sample screenshot · seller-uploaded, platform-verified',de:'Beispiel-Screenshot · vom Verkäufer hochgeladen, plattformgeprüft',fr:'Capture d\u2019exemple · fournie par le vendeur, vérifiée'},
+shot1:{zh:'卡册总览',en:'Card collection',de:'Kartensammlung',fr:'Collection de cartes'},
+shot2:{zh:'Hero 页',en:'Heroes',de:'Helden',fr:'Héros'},
+shot3:{zh:'进化页',en:'Evolutions',de:'Evolutionen',fr:'Évolutions'},
+shot4:{zh:'表情册',en:'Emotes',de:'Emotes',fr:'Émoticônes'},
+lbAlt:{zh:'账号截图',en:'Account screenshot',de:'Account-Screenshot',fr:'Capture du compte'},
+gameCoc:{zh:'Clash of Clans 品类',en:'Clash of Clans',de:'Clash of Clans',fr:'Clash of Clans'},
+gameBs:{zh:'Brawl Stars 品类',en:'Brawl Stars',de:'Brawl Stars',fr:'Brawl Stars'},
+};
+function t(k){
+  const e=T[k]; if(!e)return k;
+  let s=e[LANG]!==undefined?e[LANG]:e.en;
+  for(let i=1;i<arguments.length;i++)s=s.split('{'+(i-1)+'}').join(arguments[i]);
+  return s;
+}
+Object.assign(T,{
+kHero:{zh:'Hero',en:'Hero',de:'Helden',fr:'Héros'},
+coLoginPh2:{zh:'登录邮箱',en:'Login email',de:'Login-E-Mail',fr:'E-mail de connexion'},
+});
+
+/* ================= Data (i18n) ================= */
+const LT=o=>o[LANG]!==undefined?o[LANG]:o.en;
+const cardN=c=>LANG==='zh'?c.z:c.x;
+function i4(zh,en,de,fr){return {zh,en,de,fr};}
+const ACCOUNTS=[
+ {id:'a1',kt:16,price:429,max:38,hero:9,evo:27,gems:1240,skins:4,meta:true,rename:true,email:true,ts:8,
+  title:i4('KT16 满级主力号 · meta 齐全 · 含 CRL 20胜表情','KT16 Maxed main account · meta-ready · CRL 20-Win emote','KT16 Maxed-Hauptaccount · Meta-komplett · CRL-20-Siege-Emote','Compte principal KT16 max · prêt méta · émote CRL 20 victoires'),
+  rare:[i4('CRL 20 胜表情','CRL 20-Win emote','CRL-20-Siege-Emote','Émote CRL 20 victoires'),i4('赛季 Top100 徽章 ×2','Season Top-100 badge ×2','Saison-Top-100-Abzeichen ×2','Badge Top 100 saison ×2'),i4('限定塔皮 ×4','Limited tower skins ×4','Limitierte Turm-Skins ×4','Skins de tour limités ×4')],
+  seller:{name:'CR KingStore',rating:4.9,orders:210},
+  cards:[[{z:'骑士 Hero',x:'Knight Hero'},1],[{z:'皇家巨人 进化',x:'Royal Giant Evo'},1],[{z:'滚木 进化',x:'The Log Evo'},1],[{z:'矿工 Hero',x:'Miner Hero'},1],[{z:'电磁塔',x:'Tesla'},1],[{z:'火球',x:'Fireball'},0],[{z:'亡灵大军',x:'Skeleton Army'},0],[{z:'幻影刺客',x:'Bandit'},1],[{z:'野猪骑士',x:'Hog Rider'},0],[{z:'闪电',x:'Lightning'},0],[{z:'毒药',x:'Poison'},1],[{z:'哥布林飞桶',x:'Goblin Barrel'},0]]},
+ {id:'a2',kt:15,price:158,max:12,hero:4,evo:15,gems:320,skins:1,meta:false,rename:true,email:true,ts:5,
+  title:i4('KT15 过渡号 · 12 张 16 级卡 · 可改名','KT15 mid-progress account · 12 lv16 cards · rename available','KT15 Fortschritts-Account · 12 Lv16-Karten · Umbenennung möglich','Compte KT15 intermédiaire · 12 cartes niv. 16 · renommage dispo'),
+  rare:[],seller:{name:'Royale Shop',rating:4.7,orders:86},
+  cards:[[{z:'骑士',x:'Knight'},1],[{z:'火球',x:'Fireball'},0],[{z:'滚木 进化',x:'The Log Evo'},1],[{z:'弓箭手',x:'Archers'},0],[{z:'野猪骑士',x:'Hog Rider'},0],[{z:'冰法',x:'Ice Wizard'},0]]},
+ {id:'a3',kt:16,price:580,max:41,hero:11,evo:31,gems:2600,skins:9,meta:true,rename:false,email:true,ts:10,
+  title:i4('KT16 十年收藏号 · 绝版表情 ×9 · 元老徽章','KT16 10-year collector · 9 retired emotes · veteran badge','KT16 10-Jahre-Sammler · 9 eingestellte Emotes · Veteranen-Abzeichen','Collectionneur KT16 10 ans · 9 émotes retirées · badge vétéran'),
+  rare:[i4('绝版表情 ×9','Retired emotes ×9','Eingestellte Emotes ×9','Émotes retirées ×9'),i4('10 年元老徽章','10-Year veteran badge','10-Jahre-Veteranen-Abzeichen','Badge vétéran 10 ans'),i4('全球锦标赛徽章','Global Tournament badge','Global-Tournament-Abzeichen','Badge Tournoi mondial')],
+  seller:{name:'OldKing Collection',rating:5.0,orders:44},
+  cards:[[{z:'骑士 Hero',x:'Knight Hero'},1],[{z:'电磁塔',x:'Tesla'},1],[{z:'皇家巨人 进化',x:'Royal Giant Evo'},1],[{z:'滚木 进化',x:'The Log Evo'},1],[{z:'矿工 Hero',x:'Miner Hero'},1],[{z:'毒药',x:'Poison'},1]]},
+ {id:'a4',kt:14,price:55,max:0,hero:1,evo:6,gems:80,skins:0,meta:false,rename:true,email:false,ts:2,
+  title:i4('KT14 起步号 · 主流卡等级均衡','KT14 starter · balanced card levels','KT14 Starter · ausgewogene Kartenlevel','Compte KT14 débutant · niveaux équilibrés'),
+  rare:[],seller:{name:'FastDeal Studio',rating:4.6,orders:301},
+  cards:[[{z:'骑士',x:'Knight'},1],[{z:'火球',x:'Fireball'},0],[{z:'亡灵',x:'Skeletons'},0]]},
+ {id:'a5',kt:15,price:210,max:16,hero:5,evo:18,gems:150,skins:2,meta:true,rename:true,email:true,ts:6,
+  title:i4('KT15 樵夫桶专精号 · meta 卡组直接上手','KT15 Lumberjack-Barrel specialist · meta deck ready','KT15 Holzfäller-Fass-Spezialist · Meta-Deck bereit','Spécialiste KT15 Bûcheron-Baril · deck méta prêt'),
+  rare:[i4('赛季限定表情 ×1','Season-limited emote ×1','Saisonlimitierte Emote ×1','Émote de saison ×1')],
+  seller:{name:'CR KingStore',rating:4.9,orders:210},
+  cards:[[{z:'樵夫 进化',x:'Lumberjack Evo'},1],[{z:'哥布林飞桶',x:'Goblin Barrel'},1],[{z:'骑士 Hero',x:'Knight Hero'},1],[{z:'滚木 进化',x:'The Log Evo'},1],[{z:'冰精灵',x:'Ice Spirit'},0],[{z:'火球',x:'Fireball'},0]]},
+ {id:'a6',kt:16,price:365,max:34,hero:8,evo:24,gems:660,skins:3,meta:true,rename:true,email:true,ts:7,
+  title:i4('KT16 竞技向 · 34 张 16 级 · Ranked UC 履历','KT16 competitive · 34 lv16 cards · Ranked UC history','KT16 kompetitiv · 34 Lv16-Karten · Ranked-UC-Historie','KT16 compétitif · 34 cartes niv. 16 · historique UC classé'),
+  rare:[i4('Ultimate Champion 徽章','Ultimate Champion badge','Ultimate-Champion-Abzeichen','Badge Ultimate Champion')],
+  seller:{name:'Peak Squad',rating:4.8,orders:129},
+  cards:[[{z:'骑士 Hero',x:'Knight Hero'},1],[{z:'皇家巨人 进化',x:'Royal Giant Evo'},1],[{z:'电磁塔',x:'Tesla'},1],[{z:'幻影刺客',x:'Bandit'},1],[{z:'闪电',x:'Lightning'},0],[{z:'毒药',x:'Poison'},1]]},
+ {id:'a7',kt:15,price:189,max:9,hero:7,evo:12,gems:410,skins:1,meta:false,rename:false,email:true,ts:4,
+  title:i4('KT15 Hero 收集号 · 7 个 Hero','KT15 Hero collector · 7 Heroes','KT15 Helden-Sammler · 7 Helden','Collectionneur de héros KT15 · 7 héros'),
+  rare:[],seller:{name:'Royale Shop',rating:4.7,orders:86},
+  cards:[[{z:'骑士 Hero',x:'Knight Hero'},1],[{z:'矿工 Hero',x:'Miner Hero'},1],[{z:'野猪骑士 Hero',x:'Hog Rider Hero'},0],[{z:'火球',x:'Fireball'},0]]},
+ {id:'a8',kt:14,price:78,max:2,hero:2,evo:8,gems:95,skins:0,meta:false,rename:true,email:true,ts:1,
+  title:i4('KT14 学生自抛 · 含初始邮箱','KT14 owner-sold · original email included','KT14 Privatverkauf · Original-E-Mail enthalten','KT14 vendu par le proprio · e-mail d\u2019origine inclus'),
+  rare:[],seller:{name:'Solo seller · Jay',rating:4.5,orders:12},
+  cards:[[{z:'滚木 进化',x:'The Log Evo'},1],[{z:'骑士',x:'Knight'},1],[{z:'弓箭手',x:'Archers'},0]]},
+];
+const SELLERS_POOL=[
+ {name:'GemFast Express',rating:4.9,orders:5230,online:true},
+ {name:'Royale Supply Depot',rating:4.8,orders:3104,online:true},
+ {name:'Budget Gem House',rating:4.6,orders:892,online:true},
+ {name:'OneTop Recharge',rating:4.7,orders:1560,online:false},
+ {name:'Solo seller · Momo',rating:4.4,orders:77,online:true},
+];
+const TOPUP=[
+ {id:'pass',pass:true,official:11.99,from:9.85,gift:false},
+ {id:'g500',amt:'500',bonus:'0',official:4.99,from:4.15,gift:true},
+ {id:'g1200',amt:'1,200',bonus:'80',official:9.99,from:8.29,gift:true},
+ {id:'g2500',amt:'2,500',bonus:'200',official:19.99,from:16.39,gift:true},
+ {id:'g6500',amt:'6,500',bonus:'700',official:49.99,from:40.99,gift:true},
+ {id:'g14000',amt:'14,000',bonus:'2,000',official:99.99,from:79.99,gift:true},
+];
+const skuName=s=>s.pass?t('passName'):t('gemsName',s.amt);
+const skuSub=s=>s.pass?t('passSub'):t('bonusSub',s.bonus);
+function skuOffers(sku){
+  const mult=[1,1.04,1.07,1.10,1.13];
+  return SELLERS_POOL.map((s,i)=>({
+    seller:s, price:+(sku.from*mult[i]).toFixed(2),
+    delivery:(sku.gift&&i%2===1)?'gift':'login',
+    eta:(sku.gift&&i%2===1)?'etaGift':'etaLogin'
+  })).sort((a,b)=>a.price-b.price);
+}
+const RANKS=['Bronze','Silver','Gold','Platinum','Diamond','Master III','Master II','Master I','Grand Champion','Royal Champion','Ultimate Champion'];
+const SEG=[4,5,7,9,12,15,19,24,30,38];
+const BOOSTERS=[
+ {name:'Peak Squad · UC boosters',rating:4.9,orders:412,factor:1.15,live:true},
+ {name:'Pro booster · Leo',rating:5.0,orders:96,factor:1.28,live:true},
+ {name:'Stellar Esports Studio',rating:4.8,orders:875,factor:1.0,live:false},
+ {name:'Solo booster · NightOwl',rating:4.6,orders:58,factor:0.9,live:false},
+];
+const SVCS={
+ ranked:{id:'ranked',icon:'♛',
+  name:i4('Ranked 排位上分','Ranked Climbing','Ranked-Aufstieg','Montée en classé'),
+  badge:[{g:0,t:i4('月度复购','Monthly repeat','Monatlich wiederkehrend','Récurrent mensuel')},{g:0,t:i4('纯技术分','Skill-based','Reines Können','Basé sur le skill')}],
+  mech:i4('卡等级拉平、纯拼技术 — 练度买不来段位；且每月重置，想保持记录需月月上分。','Card levels are equalized — pure skill, progression cannot buy rank; resets every month.','Kartenlevel sind angeglichen — reines Können, Fortschritt kauft keinen Rang; monatlicher Reset.','Niveaux de cartes égalisés — pur skill, la progression n\u2019achète pas le rang ; reset mensuel.'),
+  price:i4('$4 / 段位起','from $4 / division','ab 4 $ / Liga','dès 4 $ / division')},
+ ch20:{id:'ch20',icon:'⚑',
+  name:i4('20 胜挑战代打','20-Win Challenge','20-Siege-Challenge','Défi 20 victoires'),
+  badge:[{g:1,t:i4('限时 4 天','4 days left','Noch 4 Tage','4 jours restants')},{g:1,t:i4('奖励绝版','Exclusive reward','Exklusive Belohnung','Récompense exclusive')}],
+  mech:i4('被淘汰前连赢 20 场，难度极高；限定表情过期永久绝版 — 技术+时间双重卡点。','Win 20 before elimination — brutally hard; the limited emote retires forever when the event ends.','Gewinne 20 vor dem Ausscheiden — brutal schwer; die limitierte Emote verschwindet nach Event-Ende für immer.','Gagnez 20 matchs avant élimination — très difficile ; l\u2019émote limitée disparaît à jamais après l\u2019événement.'),
+  price:i4('$25 起 · 支持不成功退款','from $25 · refund option','ab 25 $ · Erstattungsoption','dès 25 $ · option remboursement')},
+ trophy:{id:'trophy',icon:'🏆',
+  name:i4('天梯推杯','Trophy Pushing','Trophäen-Push','Poussée de trophées'),
+  badge:[{g:0,t:i4('稳定长尾','Steady grind','Stetiger Grind','Grind régulier')}],
+  mech:i4('一场一场打纯耗时间。按当前杯数到目标杯数区间计价，杯段越高单价越高。','A pure time sink, one match at a time. Priced by trophy range; higher brackets cost more.','Reiner Zeitfresser, Match für Match. Preis nach Trophäenbereich; höhere Bereiche kosten mehr.','Pur investissement de temps, match après match. Prix par palier ; plus haut = plus cher.'),
+  price:i4('$3 / 500 杯起','from $3 / 500 trophies','ab 3 $ / 500 Trophäen','dès 3 $ / 500 trophées')},
+};
+
+
+
+/* ================= Data ================= */
+const SHOT_KEYS=['shot1','shot2','shot3','shot4'];
+const SHOT_BG=['#1B2233','#241B33','#1B2B26','#2B221B'];
+const SHOT_CACHE={};
+function getShots(id){
+  const key=LANG+'|'+id;
+  if(SHOT_CACHE[key])return SHOT_CACHE[key];
+  const a=ACCOUNTS.find(x=>x.id===id);
+  SHOT_CACHE[key]=SHOT_KEYS.map((k,i)=>{
+    const cards=Array.from({length:8},(_,j)=>`<rect x='${30+j*74}' y='300' width='60' height='80' rx='6' fill='${(j+i)%3===0?'#FF6A2B':(j+i)%3===1?'#5A8DEE':'#6B7590'}' opacity='0.9'/>`).join('');
+    const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 400'><rect width='640' height='400' fill='${SHOT_BG[i]}'/><rect y='180' width='640' height='24' fill='#2E3A55'/><rect x='60' y='70' width='70' height='110' rx='6' fill='#39435E'/><polygon points='52,72 138,72 95,30' fill='#454F6E'/><rect x='510' y='70' width='70' height='110' rx='6' fill='#39435E'/><polygon points='502,72 588,72 545,30' fill='#454F6E'/><rect x='272' y='42' width='96' height='138' rx='8' fill='#404A68'/><polygon points='264,46 376,46 320,-4' fill='#4C5878'/><polygon points='292,22 302,4 312,16 320,2 328,16 338,4 348,22' fill='#F5B301'/>${cards}<text x='24' y='42' font-size='24' fill='#EDF0F5' font-family='sans-serif' font-weight='700'>KT${a.kt} · ${t(k)}</text><text x='24' y='390' font-size='13' fill='#8B93A1' font-family='sans-serif'>${t('shotSample')}</text></svg>`;
+    return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  });
+  return SHOT_CACHE[key];
+}
+let lbCtx=null, lbZoom=1, detIdx=0;
+function openLB(accId, idx){
+  const a=ACCOUNTS.find(x=>x.id===accId);
+  lbCtx={accId, imgs:getShots(accId), labels:SHOT_KEYS.map(k=>t(k)), idx:idx||0};
+  document.getElementById('lbTitle').textContent=LT(a.title);
+  lbRender();
+  document.getElementById('lb').classList.add('show');
+}
+function lbRender(){
+  const c=lbCtx;
+  document.getElementById('lbImg').src=c.imgs[c.idx];
+  document.getElementById('lbIdx').textContent=c.labels[c.idx]+' · '+(c.idx+1)+' / '+c.imgs.length;
+  document.getElementById('lbThumbs').innerHTML=c.imgs.map((s,i)=>`<img src="${s}" class="${i===c.idx?'on':''}" onclick="lbCtx.idx=${i};lbRender()" alt="${c.labels[i]}">`).join('');
+  lbZoomTo(1);
+}
+function lbNav(d){ lbCtx.idx=(lbCtx.idx+d+lbCtx.imgs.length)%lbCtx.imgs.length; lbRender(); }
+function lbZoomTo(z){
+  lbZoom=Math.min(3,Math.max(1,z));
+  const img=document.getElementById('lbImg');
+  img.style.transform='scale('+lbZoom+')';
+  if(lbZoom===1)img.style.transformOrigin='center';
+  document.getElementById('lbFrame').classList.toggle('zoomed',lbZoom>1);
+  document.getElementById('lbZoomV').textContent=Math.round(lbZoom*100)+'%';
+}
+function closeLB(){document.getElementById('lb').classList.remove('show');}
+function buyAccQuick(id){ insPick=0; detIdx=0; ORDER={type:'account', accId:id, insIdx:0, quick:true}; renderCheckout(); }
+
+function setDetShot(accId,i,el){
+  detIdx=i;
+  document.getElementById('detShot').src=getShots(accId)[i];
+  [...el.parentNode.children].forEach(e=>e.classList.remove('on')); el.classList.add('on');
+}
+
+/* ================= Category bar ================= */
+const CAT={home:['home',''],accounts:['accounts','tabAcc'],'account-detail':['accounts','tabAcc'],topup:['topup','tabTop'],boosting:['boosting','tabBoost'],'boost-detail':['boosting','tabBoost'],checkout:[null,'crumbCheckout'],success:[null,'crumbDone']};
+function updCatbar(p){
+  const [tab,key]=CAT[p]||['home','']; const label=key?t(key):'';
+  document.querySelectorAll('.cattabs button').forEach(b=>b.classList.remove('on'));
+  if(tab)document.getElementById('ct-'+tab).classList.add('on');
+  document.getElementById('cbCrumb').innerHTML=`<a onclick="nav('home')">${t('crumbHome')}</a> › <a onclick="nav('home')">${t('crumbAll')}</a> › ${label?`<a onclick="nav('home')">Clash Royale</a> › <b>${label}</b>`:'<b>Clash Royale</b>'}`;
+}
+
+/* ================= Global state ================= */
+let ORDER=null, offerCtx=null, insPick=0, boostCtx=null, lastOrderNo=null;
+
+/* ================= Navigation ================= */
+function nav(p){
+  CURPAGE=p;
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('show'));
+  document.getElementById('page-'+p).classList.add('show');
+  updCatbar(p);
+  window.scrollTo(0,0);
+}
+function toggleNotes(){
+  document.body.classList.toggle('notes');
+  document.getElementById('noteBtn').classList.toggle('on');
+}
+
+/* ================= Accounts: cards & list ================= */
+function accCard(a){
+  return `<div class="card acc-card" onclick="openAcc('${a.id}')">
+    <div class="acc-shot" onclick="event.stopPropagation();openLB('${a.id}',0)" data-note="Account cards show real seller-uploaded screenshots: click to open the lightbox with multiple photos and a magnifier (click or + to zoom, move mouse to pan)">
+      <img src="${getShots(a.id)[0]}" alt="${LT(a.title)}" loading="lazy">
+      <div class="kt-badge"><span>KT</span><b>${a.kt}</b></div>
+      <span class="n-imgs">🖼 4</span>
+      <div class="zoom-hint">${t('zoomHint')}</div>
+    </div>
+    <div class="acc-thumb-tags">
+      ${a.meta?`<span class="tag meta">${t('tagMeta')}</span>`:''}
+      ${a.rare.length?`<span class="tag gold">${t('tagRare')}</span>`:''}
+      <span class="tag trust">${t('tagVerified')}</span>
+    </div>
+    <div class="acc-body">
+      <div class="acc-title" title="${LT(a.title)}">${LT(a.title)}</div>
+      <div class="acc-fields">
+        <span class="f-pill">${t('pill16')} <b>${a.max}</b></span>
+        <span class="f-pill">${t('pillHeroes')} <b>${a.hero}</b>/14</span>
+        <span class="f-pill">${t('pillEvos')} <b>${a.evo}</b>/41</span>
+        <span class="f-pill">${t('pillGems')} <b>${a.gems}</b></span>
+      </div>
+      <div class="acc-rare">${a.rare.length?'✦ '+LT(a.rare[0])+(a.rare.length>1?t('rareMore',a.rare.length-1):''):'&nbsp;'}</div>
+      <div class="acc-foot">
+        <div><span class="price">$${a.price}</span><div class="acc-seller">${a.seller.name} · ★${a.seller.rating}</div></div>
+        <button class="btn pri" style="padding:6px 14px; font-size:12px" onclick="event.stopPropagation();buyAccQuick('${a.id}')">${t('buyNow')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function renderAccList(){
+  const kts=[...document.querySelectorAll('.fk:checked')].map(e=>+e.value);
+  const pmax=+document.getElementById('pmax').value;
+  const hmin=+document.getElementById('hmin').value;
+  document.getElementById('pmaxV').textContent=pmax;
+  document.getElementById('heroV').textContent=hmin;
+  const qEl=document.getElementById('accQ');
+  const q=(qEl?qEl.value:'').trim().toLowerCase();
+  let list=ACCOUNTS.filter(a=>{
+    const hay=(Object.values(a.title).join(' ')+' '+a.cards.map(c=>c[0].z+' '+c[0].x).join(' ')+' '+a.rare.map(r=>Object.values(r).join(' ')).join(' ')+' '+a.seller.name).toLowerCase();
+    return (!q||hay.includes(q)) &&
+    (!kts.length||kts.includes(a.kt)) && a.price<=pmax && a.hero>=hmin &&
+    (!fMeta.checked||a.meta) && (!fRare.checked||a.rare.length) &&
+    (!fRename.checked||a.rename) && (!fEmail.checked||a.email);});
+  const s=document.getElementById('accSort').value;
+  if(s==='asc')list.sort((x,y)=>x.price-y.price);
+  else if(s==='desc')list.sort((x,y)=>y.price-x.price);
+  else if(s==='new')list.sort((x,y)=>x.ts-y.ts);
+  else list.sort((x,y)=>(y.meta*100+y.max+y.rare.length*30)-(x.meta*100+x.max+x.rare.length*30));
+  document.getElementById('accCount').textContent=list.length;
+  document.getElementById('accList').innerHTML=list.length?list.map(accCard).join(''):`<div class="hint" style="grid-column:1/-1; padding:40px; text-align:center">${t('accEmpty')}</div>`;
+}
+function resetFilters(){
+  document.querySelectorAll('.fk,#fMeta,#fRare,#fRename,#fEmail').forEach(e=>e.checked=false);
+  pmax.value=600; hmin.value=0; renderAccList();
+}
+
+/* ================= Accounts: detail ================= */
+function openAcc(id){ lastAccId=id; insPick=0; detIdx=0; openAccRender(id); nav('account-detail'); }
+function openAccRender(id){
+  const a=ACCOUNTS.find(x=>x.id===id);
+  const insArr=[{d:30,f:0,t:t('included')},{d:90,f:.06,t:'+6%'},{d:180,f:.12,t:'+12%'}];
+  document.getElementById('accDetail').innerHTML=`
+  <button class="back" onclick="nav('accounts')">${t('backAcc')}</button>
+  <div class="det-top">
+    <div class="gallery" data-note="Trust core for unique listings: sellers must upload a screenshot per field group (cards / heroes / emotes); after platform verification the listing gets a Fields-verified badge. Click the main image to open the zoom lightbox">
+      <div class="main" style="padding:0; overflow:hidden; cursor:zoom-in" onclick="openLB('${a.id}',detIdx)">
+        <img id="detShot" src="${getShots(a.id)[detIdx]}" style="width:100%; height:100%; object-fit:cover" alt="${t('lbAlt')}">
+      </div>
+      <div class="thumbs">
+        ${SHOT_KEYS.map((k,i)=>`<div class="${i===detIdx?'on':''}" style="background-image:url('${getShots(a.id)[i]}'); background-size:cover; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.8)" onclick="setDetShot('${a.id}',${i},this)">${t(k)}</div>`).join('')}
+        <div onclick="alert(t('stubVideo'))">${t('verifyVideo')}</div>
+        <div onclick="alert(t('stubBattle'))">${t('battleLog')}</div>
+      </div>
+    </div>
+    <div class="card buy-box">
+      <div style="display:flex; gap:6px; flex-wrap:wrap">
+        ${a.meta?`<span class="tag meta">${t('tagMeta')}</span>`:''}
+        ${a.rare.length?`<span class="tag gold">${t('tagRare')}</span>`:''}
+        <span class="tag trust">${t('tagFields')}</span>
+        <span class="tag gray">${t('listingNo',2000+parseInt(a.id.slice(1))*7)}</span>
+      </div>
+      <h1 style="font-size:18px; margin-top:10px">${LT(a.title)}</h1>
+      <div class="p-row"><span class="price" id="detPrice">$${Math.round(a.price*(1+[0,.06,.12][insPick]))}</span><span class="hint">${t('uniqueHint')}</span></div>
+      <h4 style="font-size:13px; margin-top:10px">${t('insTitle')}</h4>
+      <div class="ins-opts" data-note="Insurance monetizes trust: 30 days is included, 90/180 days add a premium. Switching updates the price above in real time and carries into checkout">
+        ${insArr.map((x,i)=>`<label class="${i===insPick?'on':''}" onclick="pickIns(${i},${a.price},this)"><b>${x.d} ${t('daysWord')}</b><span>${x.t}</span></label>`).join('')}
+      </div>
+      <div class="buy-actions">
+        <button class="btn pri big" style="flex:2" onclick="buyAcc('${a.id}')">${t('buyNow')}</button>
+        <button class="btn big" style="flex:1" onclick="alert(t('stubChat'))">${t('askSeller')}</button>
+        <button class="btn big" onclick="this.textContent=this.textContent==='♡'?'♥':'♡'">♡</button>
+      </div>
+      <div class="guard">${t('guardAcc')}</div>
+    </div>
+  </div>
+
+  <div class="sec grid g3">
+    <div class="card zone"><h3><span class="zone-ic" style="background:var(--accent)">⚔</span>${t('zoneProg')}</h3>
+      <div class="kv"><span class="k">${t('kKT')}</span><b>KT ${a.kt}</b></div>
+      <div class="kv"><span class="k">${t('kLv16')}</span><b>${a.max}</b></div>
+      <div class="kv"><span class="k">${t('kHero')}</span><b>${a.hero} / 14</b></div>
+      <div class="kv"><span class="k">${t('kEvos')}</span><b>${a.evo} / 41</b></div>
+    </div>
+    <div class="card zone"><h3><span class="zone-ic" style="background:var(--gold)">✦</span>${t('zoneRare')}</h3>
+      ${a.rare.length?a.rare.map(r=>`<div class="kv"><span class="k">${t('kRare')}</span><b>${LT(r)}</b></div>`).join(''):`<div class="hint" style="padding:6px 0">${t('noRare')}</div>`}
+      <div class="kv"><span class="k">${t('kGems')}</span><b>${a.gems}</b></div>
+      <div class="kv"><span class="k">${t('kSkins')}</span><b>${a.skins}</b></div>
+    </div>
+    <div class="card zone trust-z"><h3><span class="zone-ic" style="background:var(--trust)">🛡</span>${t('zoneTrust')}</h3>
+      <div class="kv"><span class="k">${t('kVerif')}</span><b style="color:var(--trust)">${t('vOk')}</b></div>
+      <div class="kv"><span class="k">${t('kRename')}</span><b>${a.rename?t('renameOk'):t('renameUsed')}</b></div>
+      <div class="kv"><span class="k">${t('kEmail')}</span><b>${a.email?t('emailOk'):t('emailNo')}</b></div>
+      <div class="kv"><span class="k">${t('kIns')}</span><b>${t('insDays')}</b></div>
+    </div>
+  </div>
+
+  <div class="sec card" style="padding:16px 20px" data-note="The maxed-card list is entered by checkbox, not free text — that is what makes structured search and filters possible. Cards in the current meta pool are highlighted; the pool is updated platform-wide with each monthly balance patch, so listing tags recompute automatically">
+    <h2 style="margin-bottom:10px">${t('cardListH')} <span class="tag meta" style="vertical-align:2px">${t('cardListTag')}</span></h2>
+    <div>${a.cards.map(c=>`<span class="chip ${c[1]?'m':''}">${cardN(c[0])}</span>`).join('')}${a.max>a.cards.length?`<span class="chip" style="border-style:dashed; cursor:pointer" onclick="alert(t('stubCards',${a.max}))">${t('moreCards',a.max-a.cards.length)}</span>`:''}</div>
+  </div>
+
+  <div class="sec card seller-card">
+    <div class="avatar">${a.seller.name.slice(0,1)}</div>
+    <div style="flex:1">
+      <b>${a.seller.name}</b> <span class="tag trust">${t('sellerVerified')}</span>
+      <div class="hint"><span class="stars">★</span> ${a.seller.rating} · ${t('ordersDone',a.seller.orders)} · ${t('avgDelivery')}</div>
+    </div>
+    <button class="btn" onclick="alert(t('stubStore'))">${t('visitStore')}</button>
+  </div>
+
+  <div class="sec card" style="padding:16px 20px 22px">
+    <h2>${t('flowH')}</h2>
+    <div class="flow">
+      <div class="step" data-n="1">${t('step1')}</div>
+      <div class="step" data-n="2">${t('step2')}</div>
+      <div class="step" data-n="3">${t('step3')}</div>
+      <div class="step" data-n="4">${t('step4')}</div>
+      <div class="step" data-n="5">${t('step5')}</div>
+    </div>
+  </div>`;
+}
+function pickIns(i,base,el){
+  insPick=i;
+  [...el.parentNode.children].forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  const f=[0,.06,.12][i];
+  document.getElementById('detPrice').textContent='$'+Math.round(base*(1+f));
+}
+function buyAcc(id){ ORDER={type:'account', accId:id, insIdx:insPick}; renderCheckout(); }
+
+
+/* ================= Top-Up ================= */
+function skuCard(s){
+  const pf = LANG==='zh'
+    ? `<span class="price">$${s.from.toFixed(2)}</span><span class="hint">${t('fromWord')}</span>`
+    : `<span class="hint">${t('fromWord')}</span><span class="price">$${s.from.toFixed(2)}</span>`;
+  return `<div class="card sku" onclick="openOffers('${s.id}')">
+    <div class="amt">${skuName(s)} ${s.id==='pass'?`<span class="tag gold">${t('tagMonthly')}</span>`:''}<i>${skuSub(s)}</i></div>
+    <div class="prices">${pf}<span class="del">${t('officialP',s.official.toFixed(2))}</span><span class="tag trust">${t('saveP',Math.round((1-s.from/s.official)*100))}</span></div>
+    <div class="sku-foot"><span>${t('skuFoot')}</span><button class="btn pri">${t('buyNow')}</button></div>
+  </div>`;
+}
+function renderSkus(){
+  const el=document.getElementById('skuQ');
+  const q=(el?el.value:'').trim().toLowerCase();
+  const list=TOPUP.filter(s=>(((s.pass?Object.values(T.passName).join(' '):s.amt+' '+Object.values(T.gemsName).join(' '))+' '+(s.pass?'pass diamond monthly':'gems'))).toLowerCase().includes(q));
+  document.getElementById('skuList').innerHTML=list.length?list.map(skuCard).join(''):`<div class="hint" style="grid-column:1/-1; padding:30px; text-align:center">${t('skuEmpty')}</div>`;
+}
+function renderSvcs(){
+  const el=document.getElementById('svcQ');
+  const q=(el?el.value:'').trim().toLowerCase();
+  const list=Object.values(SVCS).filter(s=>(Object.values(s.name).join(' ')+' '+Object.values(s.mech).join(' ')).toLowerCase().includes(q));
+  document.getElementById('svcList').innerHTML=list.length?list.map(svcCard).join(''):`<div class="hint" style="grid-column:1/-1; padding:30px; text-align:center">${t('svcEmpty')}</div>`;
+}
+function openOffers(skuId){
+  const sku=TOPUP.find(x=>x.id===skuId);
+  offerCtx={sku, offers:skuOffers(sku), pick:0, qty:1};
+  document.getElementById('offerTitle').textContent=skuName(sku)+t('chooseSeller');
+  document.getElementById('qtyBox').style.display = skuId==='pass'?'none':'flex';
+  renderOffers();
+  document.getElementById('offerMask').classList.add('show');
+}
+function renderOffers(){
+  const {offers,pick}=offerCtx;
+  document.getElementById('offerList').innerHTML=offers.map((o,i)=>`
+    <div class="offer ${i===pick?'on':''}" onclick="offerCtx.pick=${i};renderOffers()">
+      <div class="radio"></div>
+      <div>
+        <div class="s-name">${o.seller.name} ${o.seller.online?`<span class="tag trust">${t('online')}</span>`:`<span class="tag gray">${t('offline')}</span>`} ${i===0?`<span class="tag meta">${t('lowest')}</span>`:''}</div>
+        <div class="s-meta"><span class="stars">★</span> ${o.seller.rating} · ${t('ordersN',o.seller.orders.toLocaleString())}</div>
+      </div>
+      <div class="d-tags"><span class="tag ${o.delivery==='gift'?'info':'gray'}">${t(o.delivery==='gift'?'deliveryGift':'deliveryLogin')}</span></div>
+      <div class="o-price price">$${o.price.toFixed(2)}</div>
+    </div>`).join('') + (offerCtx.sku.id==='pass'?`<label class="opt-line" style="border-top:1px solid var(--line); margin-top:4px"><input type="checkbox" checked> ${t('passRemind')}</label>`:'');
+  updOfferTotal();
+}
+function chgQty(d){
+  offerCtx.qty=Math.max(1,Math.min(10,offerCtx.qty+d));
+  document.getElementById('qtyV').textContent=offerCtx.qty;
+  updOfferTotal();
+}
+function updOfferTotal(){
+  const o=offerCtx.offers[offerCtx.pick];
+  document.getElementById('offerEta').textContent=t('estDelivery',t(o.eta));
+  document.getElementById('offerTotal').textContent='$'+(o.price*offerCtx.qty).toFixed(2);
+}
+function closeOffers(){document.getElementById('offerMask').classList.remove('show');}
+function offerBuy(){ ORDER={type:'topup', skuId:offerCtx.sku.id, sellerIdx:offerCtx.pick, qty:offerCtx.qty}; closeOffers(); renderCheckout(); }
+
+
+/* ================= Boosting ================= */
+function svcCard(s){
+  return `<div class="card svc" onclick="openBoost('${s.id}')">
+    <h3>${s.icon} ${LT(s.name)} ${s.badge.map(b=>`<span class="tag ${b.g?'gold':'info'}">${LT(b.t)}</span>`).join('')}</h3>
+    <div class="mech">${LT(s.mech)}</div>
+    <div class="svc-foot"><span class="price">${LT(s.price)}</span><button class="btn pri">${t('configureBuy')}</button></div>
+  </div>`;
+}
+function openBoost(id){
+  boostCtx={id, cur:2, tgt:6, tier:'w20', refund:true, live:false, rush:false,
+    tCur:6000, tTgt:8000, pick:2};
+  const s=SVCS[id];
+  let cfgHtml='';
+  if(id==='ranked'){
+    cfgHtml=`
+    <div class="row"><label>${t('curRank')}</label><input type="range" min="0" max="9" step="1" value="2" oninput="boostCtx.cur=+this.value;updBoost()"><span class="val" id="bCur"></span></div>
+    <div class="row"><label>${t('tgtRank')}</label><input type="range" min="1" max="10" step="1" value="6" oninput="boostCtx.tgt=+this.value;updBoost()"><span class="val" id="bTgt"></span></div>
+    <div class="opt-line" data-note="Add-ons apply price multipliers and re-quote in real time. Streamed boosting answers the my-account-is-in-a-stranger-s-hands anxiety — the trust option for service products"><input type="checkbox" onchange="boostCtx.live=this.checked;updBoost()"> ${t('optStream')}<span class="fee">+10%</span></div>
+    <div class="opt-line"><input type="checkbox" onchange="boostCtx.rush=this.checked;updBoost()"> ${t('optRush')}<span class="fee">+25%</span></div>
+    <div class="hint" style="margin-top:10px">${t('rankedHint')}</div>`;
+  }else if(id==='ch20'){
+    cfgHtml=`
+    <div class="tier" style="margin-bottom:12px">
+      <label class="" onclick="boostCtx.tier='w12';[...this.parentNode.children].forEach(e=>e.classList.remove('on'));this.classList.add('on');updBoost()"><b>${t('tier12b')}</b><span>${t('tier12s')}</span><input type="radio" name="tier"></label>
+      <label class="on" onclick="boostCtx.tier='w20';[...this.parentNode.children].forEach(e=>e.classList.remove('on'));this.classList.add('on');updBoost()"><b>${t('tier20b')}</b><span>${t('tier20s')}</span><input type="radio" name="tier" checked></label>
+    </div>
+    <div class="opt-line" data-note="Conversion key for high-difficulty services: failure risk is priced as a full-refund-if-failed option, turning buyer anxiety into an add-on"><input type="checkbox" checked onchange="boostCtx.refund=this.checked;updBoost()"> ${t('optRefund')}<span class="fee">+20%</span></div>
+    <div class="opt-line"><input type="checkbox" onchange="boostCtx.live=this.checked;updBoost()"> ${t('optStream')}<span class="fee">+10%</span></div>
+    <div class="hint" style="margin-top:10px; color:var(--danger)">${t('ch20Hint')}</div>`;
+  }else{
+    cfgHtml=`
+    <div class="row"><label>${t('curTro')}</label><input type="range" min="4000" max="13500" step="500" value="6000" oninput="boostCtx.tCur=+this.value;updBoost()"><span class="val" id="bCur"></span></div>
+    <div class="row"><label>${t('tgtTro')}</label><input type="range" min="4500" max="14000" step="500" value="8000" oninput="boostCtx.tTgt=+this.value;updBoost()"><span class="val" id="bTgt"></span></div>
+    <div class="opt-line"><input type="checkbox" onchange="boostCtx.live=this.checked;updBoost()"> ${t('optStream')}<span class="fee">+10%</span></div>
+    <div class="hint" style="margin-top:10px">${t('trophyHint')}</div>`;
+  }
+  document.getElementById('boostDetail').innerHTML=`
+  <button class="back" onclick="nav('boosting')">${t('backBoost')}</button>
+  <h1>${s.icon} ${LT(s.name)}</h1>
+  <p class="hint" style="margin:4px 0 16px">${LT(s.mech)}</p>
+  <div class="boost-layout">
+    <div>
+      <div class="card cfg" data-note="The boosting detail page is a configurator: a standardized service with parametric pricing. Change the config on the left and price, ETA and booster offers all update live">
+        <h2 style="margin-bottom:14px">${t('cfgH')}</h2>
+        ${cfgHtml}
+      </div>
+      <div class="card cfg" style="margin-top:14px">
+        <h2 style="margin-bottom:6px">${t('chooseBooster')} <span class="hint" style="font-weight:400">${t('offerFormula')}</span></h2>
+        <div id="boosterList"></div>
+      </div>
+    </div>
+    <div class="card sum-bar">
+      <h2>${t('sumH')}</h2>
+      <div class="kv"><span class="k">${t('kService')}</span><b>${LT(s.name)}</b></div>
+      <div class="kv"><span class="k">${t('kScope')}</span><b id="bRange">—</b></div>
+      <div class="metric">
+        <div><span>${t('estPrice')}</span><b class="price" id="bPrice">$0</b></div>
+        <div><span>${t('estTime')}</span><b id="bEta">—</b></div>
+      </div>
+      <button class="btn pri big blk" onclick="buyBoost()">${t('submitOrder')}</button>
+      <div class="guard">${t('guardBoost')}</div>
+    </div>
+  </div>`;
+  nav('boost-detail'); updBoost();
+}
+function boostBase(){
+  const c=boostCtx;
+  if(c.id==='ranked'){ if(c.tgt<=c.cur)c.tgt=c.cur+1; let p=0; for(let i=c.cur;i<c.tgt;i++)p+=SEG[i]; return {p, range:RANKS[c.cur]+' → '+RANKS[c.tgt], days:Math.max(1,Math.round((c.tgt-c.cur)*0.8))}; }
+  if(c.id==='ch20'){ return {p:c.tier==='w20'?89:25, range:c.tier==='w20'?t('range20'):t('range12'), days:c.tier==='w20'?3:1}; }
+  if(c.tTgt<=c.tCur)c.tTgt=c.tCur+500;
+  let p=0; for(let t=c.tCur;t<c.tTgt;t+=500){ p+= t<7000?3 : t<9000?5 : t<11000?8 : 12; }
+  return {p, range:c.tCur.toLocaleString()+' → '+c.tTgt.toLocaleString(), days:Math.max(1,Math.round((c.tTgt-c.tCur)/1500))};
+}
+function updBoost(){
+  const c=boostCtx, b=boostBase();
+  let f=1; if(c.live)f*=1.10; if(c.rush)f*=1.25; if(c.id==='ch20'&&c.refund)f*=1.20;
+  const base=b.p*f;
+  if(document.getElementById('bCur')){
+    if(c.id==='ranked'){bCur.textContent=RANKS[c.cur]; bTgt.textContent=RANKS[c.tgt];}
+    if(c.id==='trophy'){bCur.textContent=c.tCur.toLocaleString()+' 🏆'; bTgt.textContent=c.tTgt.toLocaleString()+' 🏆';}
+  }
+  document.getElementById('boosterList').innerHTML=BOOSTERS.map((s,i)=>{
+    const price=Math.round(base*s.factor);
+    return `<div class="offer ${i===c.pick?'on':''}" style="grid-template-columns:auto 1fr auto auto" onclick="boostCtx.pick=${i};updBoost()">
+      <div class="radio"></div>
+      <div><div class="s-name">${s.name} ${s.live?`<span class="tag info">${t('streamsLive')}</span>`:''}</div>
+      <div class="s-meta"><span class="stars">★</span> ${s.rating} · ${t('jobsDone',s.orders)}${s.factor<1?t('newBooster'):''}</div></div>
+      <div class="hint">${t('approxDays',Math.max(1,Math.round(b.days/ (s.factor>=1.15?0.7:1))))}</div>
+      <div class="o-price price">$${price}</div>
+    </div>`;}).join('');
+  const sel=BOOSTERS[c.pick];
+  document.getElementById('bRange').textContent=b.range;
+  document.getElementById('bPrice').textContent='$'+Math.round(base*sel.factor);
+  const _d=Math.max(1,Math.round(b.days/(sel.factor>=1.15?0.7:1)));
+  document.getElementById('bEta').textContent=t('daysRange',_d,_d+1);
+}
+function buyBoost(){
+  const c=boostCtx;
+  ORDER={type:'boost', cfg:{id:c.id,cur:c.cur,tgt:c.tgt,tier:c.tier,refund:c.refund,live:c.live,rush:c.rush,tCur:c.tCur,tTgt:c.tTgt}, pick:c.pick};
+  renderCheckout();
+}
+
+
+/* ================= Checkout ================= */
+function coData(){
+  const o=ORDER;
+  if(o.type==='account'){
+    const a=ACCOUNTS.find(x=>x.id===o.accId);
+    const insArr=[{d:30,f:0},{d:90,f:.06},{d:180,f:.12}], ins=insArr[o.insIdx];
+    const sub=o.quick ? t('sellerLbl',a.seller.name)+' · '+t('ins30Line')
+                      : t('sellerLbl',a.seller.name)+' · '+t('listingNo',2000+parseInt(a.id.slice(1))*7);
+    return {icon:'♜', title:LT(a.title), sub,
+      lines:[[t('accPrice'),'$'+a.price],[t('insLine',ins.d), ins.f?'+$'+Math.round(a.price*ins.f):t('included')]],
+      amount:Math.round(a.price*(1+ins.f)), delivery:null, terms:t('termsAcc'), typeLbl:t('typeAcc')};
+  }
+  if(o.type==='topup'){
+    const sku=TOPUP.find(s=>s.id===o.skuId), of=skuOffers(sku)[o.sellerIdx], q=o.qty;
+    return {icon:'◈', title:skuName(sku)+(q>1?' × '+q:''),
+      sub:t('sellerLbl',of.seller.name)+' · '+t(of.delivery==='gift'?'deliveryGift':'deliveryLogin')+' · '+t('estPrefix',t(of.eta)),
+      lines:[[t('unitPrice',q),'$'+(of.price*q).toFixed(2)],[t('vsOfficial'),t('saveAmt',((sku.official-of.price)*q).toFixed(2))]],
+      amount:+(of.price*q).toFixed(2), delivery:of.delivery, terms:t('termsTop'), typeLbl:t('typeTop')};
+  }
+  const c=o.cfg, saved=boostCtx; boostCtx=c; const b=boostBase(); boostCtx=saved;
+  const sel=BOOSTERS[o.pick];
+  let f=1, opts=[];
+  if(c.live){f*=1.10;opts.push(t('feeStream'));}
+  if(c.rush){f*=1.25;opts.push(t('feeRush'));}
+  if(c.id==='ch20'&&c.refund){f*=1.20;opts.push(t('feeRefund'));}
+  const d=Math.max(1,Math.round(b.days/(sel.factor>=1.15?0.7:1)));
+  return {icon:'⚔', title:LT(SVCS[c.id].name)+' · '+b.range,
+    sub:t('boosterLbl',sel.name)+' · ★'+sel.rating,
+    lines:[[t('baseEst'),'$'+Math.round(b.p*sel.factor)], ...opts.map(x=>[x,t('inclCalc')]), [t('estTime'),t('daysRange',d,d+1)]],
+    amount:Math.round(b.p*f*sel.factor), delivery:null, terms:t('termsBoost'), typeLbl:t('typeBoost')};
+}
+function renderCheckout(){
+  const o=ORDER, d=coData(), fee=+(d.amount*0.02).toFixed(2), total=+(d.amount+fee).toFixed(2);
+  let deliverHtml='';
+  if(o.type==='account'){
+    deliverHtml=`<div class="fld"><label>${t('coAccLbl')}</label><input type="text" placeholder="name@example.com"></div>
+    <div class="hint">${t('coAccHint')}</div>`;
+  }else if(o.type==='topup'){
+    deliverHtml = d.delivery==='gift'
+    ?`<div class="fld"><label>${t('coTagLbl')}</label><input type="text" placeholder="#8VJ2LQR0"></div>
+      <div class="hint">${t('coTagHint')}</div>`
+    :`<div class="fld"><label>${t('coLoginLbl')}</label><input type="text" placeholder="${t('coLoginPh')}"></div>
+      <div class="hint">${t('coLoginHint')}</div>`;
+  }else{
+    deliverHtml=`<div class="fld"><label>${t('coBoostLbl')}</label><input type="text" placeholder="${t('coLoginPh2')}"></div>
+    <div class="fld"><label>${t('coWinLbl')}</label><select><option>${t('coWin1')}</option><option>${t('coWin2')}</option><option>${t('coWin3')}</option></select></div>
+    <div class="hint">${t('coBoostHint')}</div>`;
+  }
+  document.getElementById('checkoutBody').innerHTML=`
+  <button class="back" onclick="history.length&&nav('${o.type==='account'?'account-detail':o.type==='topup'?'topup':'boost-detail'}')">${t('backStep')}</button>
+  <h1>${t('confirmH')}</h1>
+  <div class="co-layout" style="margin-top:16px">
+    <div>
+      <div class="card co-sec" data-note="One checkout frame, delivery section swaps by order type: accounts = email + verification flow / top-up = Player Tag or login email depending on delivery method / boosting = account handover info. Buyers fill only the minimum fields for this order">
+        <h3><span class="n">1</span>${t('dTitle',d.typeLbl)}</h3>
+        ${deliverHtml}
+      </div>
+      <div class="card co-sec">
+        <h3><span class="n">2</span>${t('payH')}</h3>
+        <label class="pay-opt on" onclick="pickPay(this)"><input type="radio" name="pay" checked> ${t('payBalance')}<span class="bal">${t('balAvail')}</span></label>
+        <label class="pay-opt" onclick="pickPay(this)"><input type="radio" name="pay"> ${t('payCard')}<span class="bal">Visa · Mastercard</span></label>
+        <label class="pay-opt" onclick="pickPay(this)"><input type="radio" name="pay"> PayPal</label>
+        <label class="pay-opt" onclick="pickPay(this)"><input type="radio" name="pay"> USDT (TRC20)</label>
+      </div>
+      <div class="card co-sec">
+        <h3><span class="n">3</span>${t('promoH')}</h3>
+        <div style="display:flex; gap:8px"><input type="text" placeholder="${t('promoPh')}" style="flex:1; border:1px solid var(--line2); border-radius:8px; padding:9px 12px"><button class="btn">${t('applyBtn')}</button></div>
+      </div>
+    </div>
+    <div class="card co-sum">
+      <div class="item">
+        <div class="ic">${d.icon}</div>
+        <div><h4>${d.title}</h4><p>${d.sub}</p></div>
+      </div>
+      ${d.lines.map(l=>`<div class="kv"><span class="k">${l[0]}</span><span>${l[1]}</span></div>`).join('')}
+      <div class="kv"><span class="k">${t('feeK')}</span><span>$${fee}</span></div>
+      <div class="co-total"><span>${t('totalDue')}</span><span class="price">$${total}</span></div>
+      <label class="agree"><input type="checkbox" id="agreeCk"> ${t('agreeTxt',d.terms)}</label>
+      <button class="btn pri big blk" onclick="submitOrder()">${t('placeOrder',total)}</button>
+      <div class="guard">${o.type==='boost'?t('guardCoBoost'):t('guardCoAcc')}</div>
+    </div>
+  </div>`;
+  nav('checkout');
+}
+function pickPay(el){
+  el.parentNode.querySelectorAll('.pay-opt').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on'); el.querySelector('input').checked=true;
+}
+function submitOrder(){
+  if(!document.getElementById('agreeCk').checked){alert(t('alertAgree'));return;}
+  lastOrderNo='IGV'+Date.now().toString().slice(-8);
+  renderSuccess(); nav('success');
+}
+function renderSuccess(){
+  const o=ORDER, d=coData(), no=lastOrderNo;
+  const next = o.type==='account'?[t('nA1'),t('nA2'),t('nA3')]:o.type==='topup'?[t('nT1'),t('nT2'),t('nT3')]:[t('nB1'),t('nB2'),t('nB3')];
+  document.getElementById('successBody').innerHTML=`
+  <div class="card done">
+    <div class="ok">✓</div>
+    <h1>${t('orderPlaced')}</h1>
+    <p class="hint" style="margin-top:6px">${t('orderNo',no,d.title)}</p>
+    <div class="steps" data-note="The success page gives type-specific next steps and plants repeat-purchase hooks (Pass renewal reminder / season reorder nudge / boosting upsell after account purchase)"><b style="color:var(--tx)">${t('nextH')}</b><ol>${next.map(s=>`<li>${s}</li>`).join('')}</ol></div>
+    <div style="display:flex; gap:10px; justify-content:center">
+      <button class="btn" onclick="alert(t('stubOrder'))">${t('viewOrder')}</button>
+      <button class="btn pri" onclick="nav('home')">${t('backHome')}</button>
+    </div>
+  </div>`;
+}
+
+
+function renderFilterPanel(){
+  const panel=document.querySelector('#page-accounts .filter');
+  const st={
+    kts:[...document.querySelectorAll('.fk')].filter(e=>e.checked).map(e=>e.value),
+    pmax:document.getElementById('pmax')?document.getElementById('pmax').value:600,
+    hmin:document.getElementById('hmin')?document.getElementById('hmin').value:0,
+    m:document.getElementById('fMeta')&&document.getElementById('fMeta').checked,
+    r:document.getElementById('fRare')&&document.getElementById('fRare').checked,
+    rn:document.getElementById('fRename')&&document.getElementById('fRename').checked,
+    em:document.getElementById('fEmail')&&document.getElementById('fEmail').checked
+  };
+  panel.innerHTML=`
+      <h4>${t('fKT')}</h4>
+      <label><input type="checkbox" class="fk" value="16" onchange="renderAccList()"> KT16 (3)</label>
+      <label><input type="checkbox" class="fk" value="15" onchange="renderAccList()"> KT15 (3)</label>
+      <label><input type="checkbox" class="fk" value="14" onchange="renderAccList()"> KT14 (2)</label>
+      <h4>${t('fPrice')}<span id="pmaxV">600</span></h4>
+      <input type="range" id="pmax" min="40" max="600" value="600" step="10" oninput="renderAccList()">
+      <h4>${t('fHero')}<span id="heroV">0</span></h4>
+      <input type="range" id="hmin" min="0" max="11" value="0" oninput="renderAccList()">
+      <h4>${t('fRarity')}</h4>
+      <label><input type="checkbox" id="fMeta" onchange="renderAccList()"> <span class="tag meta">${t('tagMeta')}</span></label>
+      <label><input type="checkbox" id="fRare" onchange="renderAccList()"> ${t('fRareLbl')}</label>
+      <label><input type="checkbox" id="fRename" onchange="renderAccList()"> ${t('fRenameLbl')}</label>
+      <label><input type="checkbox" id="fEmail" onchange="renderAccList()"> ${t('fEmailLbl')}</label>
+      <button class="btn reset" onclick="resetFilters()">${t('resetF')}</button>`;
+  [...document.querySelectorAll('.fk')].forEach(e=>e.checked=st.kts.includes(e.value));
+  document.getElementById('pmax').value=st.pmax;
+  document.getElementById('hmin').value=st.hmin;
+  document.getElementById('fMeta').checked=!!st.m;
+  document.getElementById('fRare').checked=!!st.r;
+  document.getElementById('fRename').checked=!!st.rn;
+  document.getElementById('fEmail').checked=!!st.em;
+}
+function applyStatic(){
+  const q=s=>document.querySelector(s), qa=s=>[...document.querySelectorAll(s)];
+  document.title=t('docTitle');
+  q('.gsearch input').placeholder=t('gsearchPh');
+  q('.hd-link').textContent=t('seller');
+  q('.btn-auth').textContent=t('login');
+  document.getElementById('noteBtn').textContent=t('notesBtn');
+  q('.note-tip').textContent=t('noteTip');
+  document.getElementById('ct-home').textContent=t('tabHome');
+  document.getElementById('ct-accounts').textContent=t('tabAcc');
+  document.getElementById('ct-topup').textContent=t('tabTop');
+  document.getElementById('ct-boosting').textContent=t('tabBoost');
+  /* home */
+  q('#page-home .hero h1').textContent=t('heroH');
+  q('#page-home .hero p').textContent=t('heroP');
+  const st=qa('#page-home .hero-stats > div');
+  [['statAcc'],['statOrders'],['statSellers'],['statRating']].forEach((k,i)=>{if(st[i])st[i].querySelector('span').textContent=t(k[0]);});
+  const biz=qa('#page-home .biz');
+  [['bizAccH','bizAccP','bizAccGo'],['bizTopH','bizTopP','bizTopGo'],['bizBoostH','bizBoostP','bizBoostGo']].forEach((ks,i)=>{
+    if(!biz[i])return;
+    biz[i].querySelector('h3').innerHTML=t(ks[0]);
+    biz[i].querySelector('p').textContent=t(ks[1]);
+    biz[i].querySelector('.go').textContent=t(ks[2]);
+  });
+  const secs=qa('#page-home .sec-hd');
+  [['secFeatured'],['secTopup'],['secBoost']].forEach((k,i)=>{
+    if(!secs[i])return;
+    secs[i].querySelector('h2').textContent=t(k[0]);
+    secs[i].querySelector('.more').textContent=t('viewAll');
+  });
+  /* accounts */
+  q('#page-accounts .ghead h1').textContent=t('accH1');
+  q('#page-accounts .ghead .seo').textContent=t('accSeo');
+  q('#page-accounts .ghead .rel').innerHTML=t('otherGames')+`<a onclick="alert(t('stub','Clash of Clans '+t('tabAcc')))">Clash of Clans ${t('tabAcc')}</a><a onclick="alert(t('stub','Brawl Stars '+t('tabAcc')))">Brawl Stars ${t('tabAcc')}</a>`;
+  q('#page-accounts .lbanner h3').innerHTML=t('accBanner');
+  const ach=qa('#page-accounts .lbanner .pchip');
+  if(ach[0])ach[0].innerHTML=t('chipMeta');
+  if(ach[1])ach[1].innerHTML=t('chipVerified');
+  renderFilterPanel();
+  document.getElementById('accQ').placeholder=t('accQPh');
+  q('#page-accounts .toolbar .hint').innerHTML=t('accCountHtml');
+  const sort=document.getElementById('accSort'), sv=sort.value;
+  sort.innerHTML=`<option value="rec">${t('sortRec')}</option><option value="asc">${t('sortAsc')}</option><option value="desc">${t('sortDesc')}</option><option value="new">${t('sortNew')}</option>`;
+  sort.value=sv;
+  /* topup */
+  q('#page-topup .ghead h1').textContent=t('topH1');
+  q('#page-topup .ghead .seo').textContent=t('topSeo');
+  q('#page-topup .ghead .rel').innerHTML=t('otherGames')+`<a onclick="alert(t('stub','Brawl Stars '+t('tabTop')))">Brawl Stars ${t('tabTop')}</a><a onclick="alert(t('stub','Clash of Clans '+t('tabTop')))">Clash of Clans ${t('tabTop')}</a>`;
+  q('#page-topup .lbanner h3').innerHTML=t('topBanner');
+  const tch=qa('#page-topup .lbanner .pchip');
+  if(tch[0])tch[0].innerHTML=t('chipPass');
+  if(tch[1])tch[1].innerHTML=t('chipFast');
+  document.getElementById('skuQ').placeholder=t('skuQPh');
+  q('#page-topup .toolbar .hint').innerHTML=t('deliveryLegend');
+  q('#page-topup .sec h2').textContent=t('howH');
+  const kvs=qa('#page-topup .sec .kv');
+  [['topKv1k','topKv1v'],['topKv2k','topKv2v'],['topKv3k','topKv3v']].forEach((ks,i)=>{
+    if(kvs[i])kvs[i].innerHTML=`<span class="k">${t(ks[0])}</span><span>${t(ks[1])}</span>`;
+  });
+  /* boosting */
+  q('#page-boosting .ghead h1').textContent=t('boostH1');
+  q('#page-boosting .ghead .seo').textContent=t('boostSeo');
+  q('#page-boosting .ghead .rel').innerHTML=t('otherGames')+`<a onclick="alert(t('stub','Brawl Stars '+t('tabBoost')))">Brawl Stars ${t('tabBoost')}</a><a onclick="alert(t('stub','Clash of Clans '+t('tabBoost')))">Clash of Clans ${t('tabBoost')}</a>`;
+  q('#page-boosting .lbanner h3').innerHTML=t('boostBanner');
+  const bch=qa('#page-boosting .lbanner .pchip');
+  if(bch[0])bch[0].innerHTML=t('chip20');
+  if(bch[1])bch[1].innerHTML=t('chipRanked');
+  document.getElementById('svcQ').placeholder=t('svcQPh');
+  /* drawer */
+  const dh=q('#offerMask .drawer > .hint');
+  if(dh)dh.innerHTML=t('drawerHint');
+  q('#offerMask .drawer-ft .total').innerHTML=t('totalWord')+'<span class="price" id="offerTotal">$0</span>';
+  q('#offerMask .drawer-ft .btn.pri').textContent=t('buyNow');
+  /* lightbox */
+  const zb=qa('#lb .lb-zoom button');
+  if(zb[2])zb[2].textContent=t('resetZoom');
+  document.getElementById('lbImg').alt=t('lbAlt');
+}
+function renderHomeSections(){
+  document.getElementById('homeAccs').innerHTML=[ACCOUNTS[0],ACCOUNTS[2],ACCOUNTS[5],ACCOUNTS[4]].map(accCard).join('');
+  document.getElementById('homeSkus').innerHTML=TOPUP.filter(s=>['pass','g500','g2500'].includes(s.id)).map(skuCard).join('');
+  document.getElementById('homeSvcs').innerHTML=Object.values(SVCS).map(svcCard).join('');
+}
+function restoreBoostUI(){
+  const c=boostCtx;
+  const ranges=[...document.querySelectorAll('#boostDetail .row input[type=range]')];
+  if(c.id==='ranked'&&ranges.length>=2){ranges[0].value=c.cur; ranges[1].value=c.tgt;}
+  if(c.id==='trophy'&&ranges.length>=2){ranges[0].value=c.tCur; ranges[1].value=c.tTgt;}
+  if(c.id==='ch20'){const ts=[...document.querySelectorAll('#boostDetail .tier label')]; ts.forEach(e=>e.classList.remove('on')); const el=(c.tier==='w20'?ts[1]:ts[0]); if(el){el.classList.add('on'); const r=el.querySelector('input'); if(r)r.checked=true;}}
+  const opts=[...document.querySelectorAll('#boostDetail .opt-line input')];
+  if(c.id==='ranked'){if(opts[0])opts[0].checked=c.live; if(opts[1])opts[1].checked=c.rush;}
+  if(c.id==='ch20'){if(opts[0])opts[0].checked=c.refund; if(opts[1])opts[1].checked=c.live;}
+  if(c.id==='trophy'&&opts[0])opts[0].checked=c.live;
+}
+function setLang(l){
+  LANG=l;
+  document.documentElement.lang=l==='zh'?'zh-CN':l;
+  const sel=document.getElementById('langSel'); if(sel)sel.value=l;
+  applyStatic();
+  renderAccList(); renderSkus(); renderSvcs(); renderHomeSections();
+  updCatbar(CURPAGE);
+  if(CURPAGE==='account-detail'&&lastAccId)openAccRender(lastAccId);
+  if(CURPAGE==='boost-detail'&&boostCtx){const kb=Object.assign({},boostCtx); const kp=kb.pick; openBoost(kb.id); Object.assign(boostCtx,kb); boostCtx.pick=kp; restoreBoostUI(); updBoost(); nav('boost-detail');}
+  if(CURPAGE==='checkout'&&ORDER)renderCheckout();
+  if(CURPAGE==='success'&&ORDER&&lastOrderNo){renderSuccess(); nav('success');}
+  if(document.getElementById('offerMask').classList.contains('show')&&offerCtx){
+    const keep={pick:offerCtx.pick,qty:offerCtx.qty,id:offerCtx.sku.id};
+    openOffers(keep.id); offerCtx.pick=keep.pick; offerCtx.qty=keep.qty;
+    document.getElementById('qtyV').textContent=keep.qty; renderOffers();
+  }
+  if(document.getElementById('lb').classList.contains('show')&&lbCtx){
+    openLB(lbCtx.accId,lbCtx.idx);
+  }
+}
+
+/* ================= Init ================= */
+applyStatic();
+renderAccList(); renderSkus(); renderSvcs(); renderHomeSections();
+updCatbar('home');
+(function(){
+  const fr=document.getElementById('lbFrame'), im=document.getElementById('lbImg');
+  fr.addEventListener('click',e=>{
+    const r=fr.getBoundingClientRect();
+    im.style.transformOrigin=((e.clientX-r.left)/r.width*100)+'% '+((e.clientY-r.top)/r.height*100)+'%';
+    lbZoomTo(lbZoom>1?1:2.2);
+  });
+  fr.addEventListener('mousemove',e=>{
+    if(lbZoom<=1)return;
+    const r=fr.getBoundingClientRect();
+    im.style.transformOrigin=((e.clientX-r.left)/r.width*100)+'% '+((e.clientY-r.top)/r.height*100)+'%';
+  });
+  document.addEventListener('keydown',e=>{
+    if(!document.getElementById('lb').classList.contains('show'))return;
+    if(e.key==='Escape')closeLB();
+    if(e.key==='ArrowLeft')lbNav(-1);
+    if(e.key==='ArrowRight')lbNav(1);
+  });
+})();
+
+</script>
+</body>
+</html>
