@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IGV · Top-Up — multi-attribute prototype</title>
+<style>
+:root{
+  --ink:#14171F; --ink2:#1E2330; --page:#F4F5F7; --card:#FFFFFF;
+  --accent:#FF6A2B; --accent-d:#E5551A; --accent-bg:#FFF1E9;
+  --gold:#B07A15; --gold-bg:#FBF3DF;
+  --trust:#0E8F62; --trust-bg:#E7F6EF;
+  --info:#2563EB; --info-bg:#EBF1FE;
+  --danger:#D33A2F;
+  --tx:#1B1F27; --tx2:#5B6472; --tx3:#8B93A1;
+  --line:#E6E8EC; --line2:#D6DAE1;
+  font-size:14px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--page); color:var(--tx); line-height:1.6;}
+button{font-family:inherit; cursor:pointer;}
+input,select{font-family:inherit; font-size:13px;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px;}
+
+header{background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50;}
+.hd{display:flex; align-items:center; gap:24px; height:62px;}
+.logo{display:flex; align-items:center; font-size:24px; font-weight:800; color:var(--ink);}
+.logo .mk{width:26px; height:26px; border-radius:7px; background:var(--accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:14px; margin-right:7px;}
+.logo em{color:var(--accent); font-style:normal;}
+.hd-right{margin-left:auto; display:flex; align-items:center; gap:14px; font-size:13px;}
+.hd-link{color:var(--tx2); font-weight:600;}
+.btn-auth{background:var(--accent); color:#fff; border:none; border-radius:999px; padding:9px 20px; font-size:13px; font-weight:700;}
+.note-toggle{background:none; border:1px solid var(--line2); color:var(--tx2); border-radius:8px; padding:6px 10px; font-size:12px;}
+.note-toggle.on{border-color:var(--accent); color:var(--accent); background:var(--accent-bg);}
+
+/* scenario switcher — prototype tool, deliberately looks like scaffolding */
+.demobar{background:#20242E; color:#C9CFDB;}
+.demobar .wrap{display:flex; align-items:center; gap:12px; height:44px; flex-wrap:wrap;}
+.demobar b{font-size:12px; color:#8B93A1; font-weight:600; letter-spacing:.04em; text-transform:uppercase;}
+.demobar .opts{display:flex; gap:6px;}
+.demobar button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#C9CFDB; border-radius:999px; padding:4px 13px; font-size:12.5px; font-weight:600;}
+.demobar button:hover{border-color:var(--accent);}
+.demobar button.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+.demobar .cur{margin-left:auto; font-size:12px; color:#8B93A1;}
+
+.catbar{background:#F7F8FA; border-bottom:1px solid var(--line);}
+.catbar .wrap{display:flex; align-items:center; height:44px; gap:10px;}
+.crumb{font-size:13px; color:var(--tx3);} .crumb b{color:var(--tx); font-weight:600;}
+.cattabs{margin-left:auto; display:flex;}
+.cattabs button{background:none; border:none; font-size:13.5px; font-weight:600; color:var(--tx2); padding:0 14px; height:44px; border-bottom:2px solid transparent;}
+.cattabs button.on{color:var(--accent); border-bottom-color:var(--accent);}
+
+.page{display:none; padding:24px 0 60px;} .page.show{display:block;}
+h1{font-size:22px; font-weight:700;} h2{font-size:17px; font-weight:700; margin-bottom:14px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px;}
+.tag{display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; line-height:1.6;}
+.tag.meta{background:var(--accent-bg); color:var(--accent-d);}
+.tag.trust{background:var(--trust-bg); color:var(--trust);}
+.tag.info{background:var(--info-bg); color:var(--info);}
+.tag.gray{background:#EFF1F4; color:var(--tx2);}
+.btn{border-radius:8px; border:1px solid var(--line2); background:#fff; padding:9px 18px; font-size:14px; font-weight:600; color:var(--tx);}
+.btn:hover{border-color:var(--tx3);}
+.btn.pri{background:var(--accent); border-color:var(--accent); color:#fff;}
+.btn.pri:hover{background:var(--accent-d);}
+.btn.big{padding:12px 28px; font-size:15px;} .btn.blk{width:100%;}
+.btn:disabled{opacity:.5; cursor:not-allowed;}
+.price{font-weight:800; color:var(--accent-d);}
+.del{color:var(--tx3); text-decoration:line-through; font-weight:400;}
+.hint{font-size:12px; color:var(--tx3);}
+.kv{display:flex; justify-content:space-between; font-size:13px; padding:5px 0;}
+.kv .k{color:var(--tx2);}
+.back{display:inline-flex; gap:6px; color:var(--tx2); font-size:13px; margin-bottom:14px; background:none; border:none;}
+
+.ghead{display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;}
+.gicon{width:52px; height:52px; border-radius:12px; background:var(--ink); color:#F5B301; font-size:26px; display:flex; align-items:center; justify-content:center; flex:none;}
+.ghead h1{font-size:21px;} .ghead .seo{font-size:13px; color:var(--tx2); margin-top:3px;}
+
+/* ===== attribute filter bar ===== */
+.attrbar{padding:14px 18px 12px; margin-bottom:18px;}
+.attrs{display:flex; flex-wrap:wrap; gap:12px 14px;}
+.attrs.clamp{max-height:63px; overflow:hidden;}
+.attr-more{display:none; align-items:center; gap:10px; margin-top:12px; padding-top:11px; border-top:1px solid var(--line); flex-wrap:wrap;}
+.attr-more.show{display:flex;}
+.attr-more button{background:none; border:1px solid var(--line2); border-radius:8px; height:32px; padding:0 14px; font-size:12.5px; font-weight:700; color:var(--tx); display:inline-flex; align-items:center; gap:6px;}
+.attr-more button:hover{border-color:var(--accent); color:var(--accent-d);}
+.attr-more .hidden-sum{font-size:12px; color:var(--tx3); min-width:0;}
+.attr-more .hidden-sum b{color:var(--tx2); font-weight:600;}
+.chev{transition:transform .15s;} .attr-more.open .chev{transform:rotate(180deg);}
+.afield{display:flex; flex-direction:column; gap:5px; min-width:0;}
+.afield label{font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tx3); padding-left:2px;}
+.fselect{appearance:none; border:1px solid var(--line2); background:#fff; border-radius:9px; height:38px; padding:0 34px 0 13px;
+  font-size:13.5px; font-weight:600; color:var(--tx); cursor:pointer; min-width:150px; max-width:230px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' fill='none' stroke='%235B6472' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center;}
+.fselect:hover{border-color:var(--tx3);}
+.fselect:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,106,43,.15);}
+.attr-note{font-size:11.5px; color:var(--tx3); margin-top:12px; padding-top:10px; border-top:1px solid var(--line);}
+
+/* ===== sku grid ===== */
+.sku-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.sku{padding:18px; cursor:pointer;}
+.sku:hover{border-color:var(--accent);}
+.sku .amt{font-size:18px; font-weight:800;}
+.sku .ctx{display:flex; gap:5px; margin-top:7px; flex-wrap:wrap;}
+.sku .prices{margin:9px 0 4px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+.sku .prices .price{font-size:20px;}
+.sku-foot{display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:12px; color:var(--tx3);}
+.sku-foot .btn{padding:5px 14px; font-size:12px;}
+.nores{grid-column:1/-1; background:#fff; border:1px dashed var(--line2); border-radius:12px; padding:34px 24px; text-align:center;}
+.nores b{font-size:14px;} .nores p{font-size:13px; color:var(--tx2); margin-top:5px;}
+
+/* ===== offer dialog ===== */
+.mask{display:none; position:fixed; inset:0; background:rgba(15,18,25,.5); z-index:100; align-items:center; justify-content:center; padding:24px;}
+.mask.show{display:flex;}
+.drawer{background:#fff; width:100%; max-width:820px; border-radius:16px; max-height:86vh; display:flex; flex-direction:column; box-shadow:0 24px 70px rgba(15,18,25,.3);}
+.drawer-hd{padding:16px 22px 12px; border-bottom:1px solid var(--line);}
+.drawer-hd .t{display:flex; align-items:flex-start; gap:12px;}
+.drawer-hd h3{font-size:16px; flex:1; line-height:1.45;}
+.drawer-hd .x{background:none; border:none; font-size:18px; color:var(--tx3);}
+.drawer-tools{display:flex; align-items:center; gap:10px; margin-top:11px;}
+.drawer-tools select{border:1px solid var(--line2); border-radius:8px; padding:5px 9px; background:#fff; font-size:12px;}
+
+.offers{overflow-y:auto; padding:6px 22px 12px;}
+.offer{display:grid; grid-template-columns:16px 30px 1fr auto auto; gap:11px; align-items:center; padding:9px 10px; border-bottom:1px solid var(--line); cursor:pointer; border-radius:8px;}
+.offer:hover{background:#FAFBFC;}
+.offer.on{background:var(--accent-bg); outline:1.5px solid var(--accent);}
+.offer .radio{width:16px; height:16px; border:2px solid var(--line2); border-radius:50%;}
+.offer.on .radio{border-color:var(--accent); background:radial-gradient(circle, var(--accent) 45%, #fff 50%);}
+.avwrap{position:relative; width:30px; height:30px;}
+.av{width:100%; height:100%; border-radius:8px; background:var(--ink2); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+.dot{position:absolute; right:-3px; bottom:-3px; width:11px; height:11px; border-radius:50%; background:var(--tx3); border:2px solid #fff;}
+.dot.on{background:#22B573;}
+.offer.on .dot{border-color:var(--accent-bg);}
+.tip{position:relative; display:inline-flex; align-items:center;}
+.tip:hover::after{content:attr(data-t); position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:11px; font-weight:400; line-height:1.5; padding:5px 9px; border-radius:6px; white-space:nowrap; z-index:8;}
+.ico{width:14px; height:14px; color:var(--trust);}
+.s-name{font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; line-height:1.4;}
+.s-meta{font-size:11px; color:var(--tx3); display:flex; align-items:center; gap:5px; flex-wrap:wrap;}
+.s-meta em{font-style:normal; color:var(--line2);}
+.o-tags{display:flex; gap:4px; justify-content:flex-end; flex-wrap:wrap; max-width:210px;}
+.o-price{text-align:right; min-width:98px; display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+.o-price .tagline{min-height:19px;}
+.o-price .p{font-size:16px; font-weight:800; color:var(--accent-d); white-space:nowrap;}
+.o-price .p small{font-size:11px; font-weight:600; color:var(--tx3);}
+
+.drawer-ft{border-top:1px solid var(--line); padding:12px 22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.qtywrap{display:flex; flex-direction:column; gap:3px;}
+.qty{display:flex; align-items:center; border:1px solid var(--line2); border-radius:8px; background:#fff;}
+.qty button{width:30px; height:32px; background:none; border:none; font-size:15px; color:var(--tx2);}
+.qty button:disabled{color:var(--line2); cursor:not-allowed;}
+.qty input{width:46px; height:32px; text-align:center; font-weight:700; font-size:14px; border:none; border-left:1px solid var(--line); border-right:1px solid var(--line); outline:none; -moz-appearance:textfield;}
+.qty input::-webkit-outer-spin-button,.qty input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+.qtywrap .lim{font-size:11px; color:var(--tx3);}
+.drawer-ft .total{margin-left:auto; font-size:13px; color:var(--tx2);}
+.drawer-ft .total .price{font-size:20px; margin-left:4px;}
+.drawer-ft .total .units{font-size:13px; font-weight:600; color:var(--tx2);}
+.drawer-ft .save{font-size:11px; color:var(--trust); display:block; text-align:right;}
+
+body.notes [data-note]{outline:1.5px dashed var(--accent); outline-offset:3px; position:relative;}
+body.notes [data-note]:hover::after{content:attr(data-note); position:absolute; z-index:99; left:0; top:100%; margin-top:8px; background:var(--ink); color:#fff; font-size:12px; line-height:1.5; padding:8px 12px; border-radius:8px; width:max-content; max-width:340px; font-weight:400; white-space:normal;}
+.toasts{position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:150; display:flex; flex-direction:column; gap:8px;}
+.toast{background:var(--ink); color:#fff; font-size:13px; padding:9px 16px; border-radius:999px;}
+
+@media (max-width:900px){
+  .sku-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:560px){
+  .sku-grid{grid-template-columns:1fr;}
+  .offer{grid-template-columns:16px 1fr auto; gap:9px;}
+  .avwrap{display:none;} .o-tags{grid-column:2; justify-content:flex-start; max-width:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="logo"><span class="mk">IG</span>IG<em>V</em></div>
+    <div class="hd-right">
+      <span class="hd-link">Sell on IGV</span>
+      <span class="hd-link">Help</span>
+      <button class="note-toggle" id="noteBtn" onclick="toggleNotes()">◎ Design notes</button>
+      <button class="btn-auth">Sign in</button>
+    </div>
+  </div>
+  <div class="demobar">
+    <div class="wrap">
+      <b>Prototype scenario</b>
+      <div class="opts" id="scenarioOpts"></div>
+      <span class="cur" id="scenarioCur"></span>
+    </div>
+  </div>
+  <div class="catbar">
+    <div class="wrap">
+      <div class="crumb">Home › All Games › <span id="crumbGame"></span> › <b>Top-Up</b></div>
+      <div class="cattabs">
+        <button onclick="stub('Overview')">Overview</button>
+        <button onclick="stub('Accounts')">Accounts</button>
+        <button class="on">Top-Up</button>
+        <button onclick="stub('Boosting')">Boosting</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page show" id="page-list">
+  <div class="wrap">
+    <div class="ghead">
+      <div class="gicon" id="gIcon">◈</div>
+      <div>
+        <h1 id="gTitle"></h1>
+        <p class="seo" id="gSeo"></p>
+      </div>
+    </div>
+
+    <div class="card attrbar" id="attrBar" data-note="Every attribute is the same control — a labelled select — so one attribute and five look like the same component and wrap onto a second line instead of restacking. The label sits above rather than inside, because a select showing only its current value reads as a state, not as something you can change"></div>
+
+    <div class="sku-grid" id="skuList"></div>
+  </div>
+</div>
+
+
+<div class="mask" id="offerMask" onclick="if(event.target===this)closeOffers()">
+  <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="offerTitle">
+    <div class="drawer-hd">
+      <div class="t">
+        <h3 id="offerTitle"></h3>
+        <button class="x" onclick="closeOffers()" aria-label="Close">✕</button>
+      </div>
+      <div class="drawer-tools">
+        <label class="hint" for="oSort">Sort</label>
+        <select id="oSort" onchange="offerCtx.sort=this.value; renderOffers()">
+          <option value="price">Lowest price</option>
+          <option value="rating">Highest positive rate</option>
+          <option value="orders">Most orders</option>
+          <option value="fast">Fastest delivery</option>
+        </select>
+      </div>
+    </div>
+    <div class="offers" id="offerList" data-note="One seller = one row. Because the buyer already fixed the attribute combination on the list page, every row here is quoting the same thing — so price, credit and speed are the only variables left, and the row can stay a single line"></div>
+    <div class="drawer-ft">
+      <div class="qtywrap">
+        <div class="qty">
+          <button onclick="chgQty(-1)" id="qMinus" aria-label="Decrease">−</button>
+          <input type="number" id="qtyV" value="1" aria-label="Quantity" oninput="typeQty(this.value)" onblur="commitQty()">
+          <button onclick="chgQty(1)" id="qPlus" aria-label="Increase">＋</button>
+        </div>
+        <span class="lim" id="qtyLimit"></span>
+      </div>
+      <div class="total">Total<span class="price" id="offerTotal">—</span><span class="save" id="offerSave"></span></div>
+      <button class="btn pri big" onclick="offerBuy()" id="offerBuyBtn">Buy Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* delivery methods are a seller listing property first; a category may ALSO expose
+   them as a filterable attribute, but the row in the offer list always reports
+   what the seller actually listed */
+const METHODS={
+  'Direct ID recharge':{m:0,      eta:'5–15 min',  fast:1},
+  'Login top-up':      {m:-0.012, eta:'15–60 min', fast:2},
+  'Gift via friend':   {m:-0.018, eta:'1–24 h',    fast:3},
+  'Gift code / CDK':   {m:-0.030, eta:'Instant',   fast:1}
+};
+
+/* ===================== attribute library ===================== */
+/* every value may carry m = multiplicative price modifier, and extra meta */
+const ATTR={
+  server4:{key:'server', label:'Server', hint:'where your account lives', values:[
+    {v:'Global'},{v:'Europe'},{v:'North America'},{v:'Asia-Pacific'}]},
+  server6:{key:'server', label:'Server', hint:'where your account lives', values:[
+    {v:'America'},{v:'Europe'},{v:'Asia'},{v:'TW / HK / MO'},{v:'SEA'},{v:'Japan'}]},
+  deliv2:{key:'deliv', label:'Delivery method', hint:'affects price and speed', values:[
+    {v:'Login top-up',    m:0,      eta:'15–60 min', fast:1},
+    {v:'Gift via friend', m:-0.018, eta:'1–24 h',    fast:3}]},
+  deliv3:{key:'deliv', label:'Delivery method', hint:'affects price and speed', values:[
+    {v:'Direct ID recharge', m:0,      eta:'5–15 min',  fast:1},
+    {v:'Login top-up',       m:-0.012, eta:'15–60 min', fast:2},
+    {v:'Gift code / CDK',    m:-0.030, eta:'Instant',   fast:1}]},
+  platform3:{key:'platform', label:'Platform', hint:'store the seller bills through', values:[
+    {v:'iOS', m:0},{v:'Android', m:-0.008},{v:'PC / cross-save', m:-0.012}]},
+  first2:{key:'first', label:'First-time bonus', hint:'doubles the gems, costs more', values:[
+    {v:'Not claimed yet', m:0.045},{v:'Already claimed', m:0}]},
+  store6:{key:'store', label:'Store region', hint:'currency the top-up is billed in', values:[
+    {v:'USD store'},{v:'EUR store', m:0.006},{v:'GBP store', m:0.01},
+    {v:'JPY store', m:-0.02},{v:'SGD store', m:-0.008},{v:'BRL store', m:-0.035}]},
+  binding2:{key:'binding', label:'Account binding', hint:'', values:[
+    {v:'Bound account'},{v:'Guest account', m:0.02}]},
+  priority2:{key:'priority', label:'Order priority', hint:'', values:[
+    {v:'Standard queue'},{v:'Priority queue', m:0.035}]},
+  lang3:{key:'lang', label:'Support language', hint:'', values:[
+    {v:'English'},{v:'中文'},{v:'Español'}]}
+};
+
+const PACKS_CR=[
+  {id:'pass', title:'Diamond Pass · July Season', official:11.99},
+  {id:'p1', title:'500 Gems',            official:4.99},
+  {id:'p2', title:'1,200 + 80 Gems',     official:9.99},
+  {id:'p3', title:'2,500 + 200 Gems',    official:19.99},
+  {id:'p4', title:'6,500 + 700 Gems',    official:49.99},
+  {id:'p5', title:'14,000 + 2,000 Gems', official:99.99}
+];
+const PACKS_HSR=[
+  {id:'h1', title:'60 Oneiric Shards',    official:0.99},
+  {id:'h2', title:'300 + 30 Shards',      official:4.99},
+  {id:'h3', title:'980 + 110 Shards',     official:14.99},
+  {id:'h4', title:'1,980 + 260 Shards',   official:29.99},
+  {id:'h5', title:'3,280 + 600 Shards',   official:49.99},
+  {id:'h6', title:'6,480 + 1,600 Shards', official:99.99}
+];
+
+/* four scenarios, 1 / 2 / 3 / 5 attributes */
+const SCENARIOS=[
+ {n:1, key:'s1', game:'Clash Royale', icon:'◈',
+  title:'Clash Royale Top-Up · Gems & Diamond Pass',
+  seo:'One attribute. Delivery method is not filtered here, so each seller quotes with whichever method they listed.',
+  attrs:[ATTR.server4], packs:PACKS_CR},
+ {n:2, key:'s2', game:'Clash Royale', icon:'◈',
+  title:'Clash Royale Top-Up · Gems & Diamond Pass',
+  seo:'Two attributes: server decides who can reach your account, delivery method decides speed and price.',
+  attrs:[ATTR.server4, ATTR.deliv2], packs:PACKS_CR},
+ {n:3, key:'s3', game:'Honkai: Star Rail', icon:'✦',
+  title:'Honkai: Star Rail Top-Up · Oneiric Shards',
+  seo:'Three attributes. Delivery is still a seller listing rather than a filter, so one seller can appear twice at different speeds and prices.',
+  attrs:[ATTR.server4, ATTR.platform3, ATTR.first2], packs:PACKS_HSR},
+ {n:5, key:'s5', game:'Honkai: Star Rail', icon:'✦',
+  title:'Honkai: Star Rail Top-Up · Oneiric Shards',
+  seo:'Five attributes: server, delivery, platform, first-time bonus and store region all move the price.',
+  attrs:[ATTR.server6, ATTR.deliv3, ATTR.platform3, ATTR.first2, ATTR.store6], packs:PACKS_HSR},
+ {n:8, key:'s8', game:'Honkai: Star Rail', icon:'✦',
+  title:'Honkai: Star Rail Top-Up · Oneiric Shards',
+  seo:'Eight attributes — enough to overflow one row, so the filter bar collapses to a single line with the rest behind More filters.',
+  attrs:[ATTR.server6, ATTR.deliv3, ATTR.platform3, ATTR.first2, ATTR.store6,
+         ATTR.binding2, ATTR.priority2, ATTR.lang3], packs:PACKS_HSR}
+];
+
+/* sellers declare which values they support per attribute key; a missing key = supports all */
+const SELLERS=[
+ {n:'GemFast Express', init:'GF', pos:98.6, orders:5230, online:true, kyc:1, dep:1, mult:0.861,
+  delivers:['Login top-up','Direct ID recharge'],
+  sup:{server:['Global','Europe','North America','America','Asia'],
+       platform:['iOS','Android'], store:['USD store','EUR store','GBP store']}},
+ {n:'Royale Supply Depot', init:'RS', pos:97.2, orders:3104, online:true, kyc:1, dep:1, mult:0.884,
+  delivers:['Gift via friend','Gift code / CDK','Login top-up'],
+  sup:{server:['Global','Asia-Pacific','Asia','SEA','TW / HK / MO'],
+       platform:['Android','PC / cross-save'], store:['USD store','SGD store','JPY store']}},
+ {n:'Budget Gem House', init:'BG', pos:94.8, orders:892, online:true, kyc:1, dep:0, mult:0.902,
+  delivers:['Login top-up','Gift via friend'],
+  sup:{server:['Europe','America','Japan'],
+       platform:['iOS','Android','PC / cross-save'], first:['Already claimed'],
+       store:['EUR store','USD store','JPY store','BRL store']}},
+ {n:'OneTop Recharge', init:'OT', pos:96.1, orders:1560, online:false, kyc:0, dep:1, mult:0.925,
+  delivers:['Direct ID recharge'],
+  sup:{server:['Asia-Pacific','Global','Asia','SEA','Japan'],
+       platform:['iOS','PC / cross-save'], store:['SGD store','JPY store','USD store']}},
+ {n:'Solo seller · Momo', init:'MM', pos:92.3, orders:77, online:true, kyc:0, dep:0, mult:0.948,
+  delivers:['Gift via friend','Gift code / CDK'],
+  sup:{server:['North America','America','TW / HK / MO'],
+       platform:['iOS'], first:['Already claimed'], store:['USD store','BRL store']}},
+ {n:'Arena Credit Co.', init:'AC', pos:99.1, orders:8410, online:true, kyc:1, dep:1, mult:0.877,
+  delivers:['Direct ID recharge','Login top-up'],
+  sup:{store:['USD store','EUR store','GBP store','SGD store'],
+       platform:['iOS','Android','PC / cross-save']}},
+ {n:'Nova Shard Hub', init:'NV', pos:97.8, orders:4120, online:true, kyc:1, dep:1, mult:0.893,
+  delivers:['Gift code / CDK','Direct ID recharge'],
+  sup:{server:['Asia','SEA','TW / HK / MO','Japan','Asia-Pacific'],
+       platform:['Android','iOS'],
+       store:['SGD store','JPY store','USD store','BRL store']}}
+];
+
+/* ===================== state ===================== */
+let SC=SCENARIOS[1];      // current scenario
+let SEL={};               // {attrKey: value}
+let offerCtx=null;
+
+const $=id=>document.getElementById(id);
+const money=n=>'$'+n.toFixed(2);
+const valDef=(a,v)=>a.values.find(x=>x.v===v);
+const supports=(s,key,v)=>!s.sup[key] || s.sup[key].includes(v);
+function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;$('toasts').appendChild(e);setTimeout(()=>e.remove(),2400);}
+function stub(n){toast('Prototype stub: '+n);}
+function toggleNotes(){document.body.classList.toggle('notes');$('noteBtn').classList.toggle('on');}
+function nav(p){document.querySelectorAll('.page').forEach(e=>e.classList.remove('show'));$('page-'+p).classList.add('show');window.scrollTo(0,0);}
+
+/* ===================== attribute engine ===================== */
+/* a seller can quote a combination only if it supports every selected value */
+function sellersFor(sel){
+  const dAttr=SC.attrs.find(a=>a.key==='deliv');
+  return SELLERS.filter(s=>
+    SC.attrs.every(a=>a.key==='deliv' || supports(s,a.key,sel[a.key])) &&
+    (!dAttr || s.delivers.includes(sel.deliv)));
+}
+/* is this value reachable, holding the other selections fixed? */
+function valueAvailable(attr,v){
+  return sellersFor({...SEL,[attr.key]:v}).length>0;
+}
+/* combined multiplier from every selected value, delivery excluded —
+   delivery is priced from the seller's own listed method instead */
+function selModifier(sel){
+  return SC.attrs.reduce((t,a)=>t+(a.key==='deliv'?0:((valDef(a,sel[a.key])||{}).m||0)),0);
+}
+/* which listed methods can this seller quote under the current selection */
+function methodsFor(s,sel){
+  const dAttr=SC.attrs.find(a=>a.key==='deliv');
+  return dAttr ? s.delivers.filter(m=>m===sel.deliv) : s.delivers;
+}
+function offersFor(pack,sel){
+  const mod=selModifier(sel), out=[];
+  sellersFor(sel).forEach(s=>methodsFor(s,sel).forEach(m=>{
+    const md=METHODS[m];
+    out.push({
+      seller:s, method:m,
+      price:+(pack.official*(s.mult+mod+md.m)).toFixed(2),
+      eta: s.online?md.eta:'from 09:00 UTC',
+      fast: s.online?md.fast:md.fast+2,
+      min: (pack.official<10 && s.orders>5000) ? 2 : 1,
+      stock: Math.max(3, Math.round((40 + s.orders%37) / (pack.official>=49?4:1)))
+    });
+  }));
+  return out;
+}
+
+/* pick a valid starting combination, and repair an invalid one after a change */
+function repairSelection(changedKey){
+  SC.attrs.forEach(a=>{
+    if(a.key===changedKey) return;
+    if(!SEL[a.key] || !valueAvailable(a,SEL[a.key])){
+      const ok=a.values.find(x=>valueAvailable(a,x.v));
+      if(ok) SEL[a.key]=ok.v;
+    }
+  });
+}
+function initSelection(){
+  SEL={};
+  SC.attrs.forEach(a=>SEL[a.key]=a.values[0].v);
+  SC.attrs.forEach(a=>{ if(!valueAvailable(a,SEL[a.key])){
+    const ok=a.values.find(x=>valueAvailable(a,x.v)); if(ok) SEL[a.key]=ok.v; }});
+}
+
+/* ===================== render: scenario switch ===================== */
+function renderScenarios(){
+  $('scenarioOpts').innerHTML=SCENARIOS.map(s=>
+    `<button class="${s.key===SC.key?'on':''}" onclick="setScenario('${s.key}')">${s.n} attribute${s.n>1?'s':''}</button>`).join('');
+  $('scenarioCur').textContent=SC.attrs.map(a=>a.label).join(' · ');
+  $('gIcon').textContent=SC.icon;
+  $('gTitle').textContent=SC.title;
+  $('gSeo').textContent=SC.seo;
+  $('crumbGame').textContent=SC.game;
+}
+function setScenario(key){
+  SC=SCENARIOS.find(s=>s.key===key);
+  attrsOpen=false;
+  initSelection();
+  renderScenarios(); renderAttrs(); renderSkus();
+  nav('list');
+}
+
+/* ===================== render: attribute bar ===================== */
+let attrsOpen=false;
+function renderAttrs(){
+  $('attrBar').innerHTML=`
+    <div class="attrs ${attrsOpen?'':'clamp'}" id="attrsRow">`+SC.attrs.map(a=>`
+      <div class="afield" data-key="${a.key}">
+        <label for="at-${a.key}">${a.label}</label>
+        <select class="fselect" id="at-${a.key}" onchange="setAttr('${a.key}',this.value)">
+          ${a.values.map(v=>{
+            const ok=valueAvailable(a,v.v);
+            const meta=v.eta?' · '+v.eta:'';
+            return `<option value="${v.v}" ${SEL[a.key]===v.v?'selected':''} ${ok?'':'disabled'}>${v.v}${meta}${ok?'':' — no sellers'}</option>`;
+          }).join('')}
+        </select>
+      </div>`).join('')+`</div>
+    <div class="attr-more ${attrsOpen?'open':''}" id="attrMore">
+      <button onclick="toggleAttrs()" id="attrMoreBtn"></button>
+      <span class="hidden-sum" id="attrHidden"></span>
+    </div>
+    <p class="attr-note">Every attribute is priced — sellers quote against a full combination, so each change re-prices the list. Values no seller can serve with your other choices are greyed out rather than removed.</p>`;
+  requestAnimationFrame(measureAttrs);
+}
+/* which fields sit below the first row — measured, not assumed, so it adapts to viewport width */
+function measureAttrs(){
+  const row=$('attrsRow'), more=$('attrMore');
+  if(!row) return;
+  const fields=[...row.querySelectorAll('.afield')];
+  if(!fields.length) return;
+  const top0=fields[0].offsetTop;
+  const overflow=fields.filter(f=>f.offsetTop>top0+4);
+  if(!overflow.length && !attrsOpen){ more.classList.remove('show'); return; }
+  if(!overflow.length && attrsOpen){ more.classList.remove('show'); return; }
+  more.classList.add('show');
+  $('attrMoreBtn').innerHTML=(attrsOpen?'Fewer filters':`More filters (${overflow.length})`)+
+    ' <span class="chev">⌄</span>';
+  $('attrHidden').innerHTML=attrsOpen ? '' :
+    'Still applied: '+overflow.map(f=>`<b>${SEL[f.dataset.key]}</b>`).join(', ');
+}
+function toggleAttrs(){ attrsOpen=!attrsOpen; renderAttrs(); }
+window.addEventListener('resize',()=>requestAnimationFrame(measureAttrs));
+function setAttr(key,v){
+  SEL[key]=v;
+  repairSelection(key);
+  renderAttrs(); renderSkus();
+}
+
+/* ===================== render: sku list ===================== */
+function selTags(limit){
+  const all=SC.attrs.map(a=>({key:a.key, v:SEL[a.key]}));
+  if(!limit||all.length<=limit) return all.map(t=>`<span class="tag ${t.key==='deliv'?'gray':'info'}">${t.v}</span>`).join('');
+  const head=all.slice(0,limit).map(t=>`<span class="tag ${t.key==='deliv'?'gray':'info'}">${t.v}</span>`).join('');
+  const rest=all.slice(limit).map(t=>t.v).join(', ');
+  return head+`<span class="tag gray" title="${rest}">+${all.length-limit}</span>`;
+}
+function renderSkus(){
+  const rows=SC.packs.map(p=>({p, offers:offersFor(p,SEL)})).filter(r=>r.offers.length);
+  if(!rows.length){
+    $('skuList').innerHTML=`<div class="nores"><b>No seller covers this combination</b>
+      <p>Change one of the attributes above — the struck-through values are the ones nobody can serve right now.</p></div>`;
+    return;
+  }
+  $('skuList').innerHTML=rows.map(({p,offers})=>{
+    const low=Math.min(...offers.map(o=>o.price));
+    const save=Math.round((1-low/p.official)*100);
+    return `<div class="card sku" onclick="openOffers('${p.id}')">
+      <div class="amt">${p.title}</div>
+      <div class="ctx">${selTags(3)}</div>
+      <div class="prices">
+        <span class="hint">from</span><span class="price">${money(low)}</span>
+        <span class="del">Official ${money(p.official)}</span>
+        ${save>0?`<span class="tag trust">Save ${save}%</span>`:`<span class="tag gray">+${Math.abs(save)}% vs official</span>`}
+      </div>
+      <div class="sku-foot"><span>${offers.length} seller offers</span><button class="btn pri">Buy Now</button></div>
+    </div>`;
+  }).join('');
+}
+
+/* ===================== offer dialog ===================== */
+const KYC_ICO='<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.6" y="4" width="14.8" height="12" rx="2.4"/><circle cx="7.4" cy="9.4" r="1.9"/><path d="M4.6 13.6c.5-1.4 1.6-2.1 2.8-2.1s2.3.7 2.8 2.1M12.4 8.6h3.2M12.4 11.4h3.2"/></svg>';
+const DEP_ICO='<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 2.4l6 2.8v4.7c0 3.8-2.5 6.6-6 7.7-3.5-1.1-6-3.9-6-7.7V5.2l6-2.8z"/><path d="M7.5 10l1.8 1.8 3.4-3.6"/></svg>';
+
+function openOffers(pid){
+  const pack=SC.packs.find(x=>x.id===pid);
+  const offers=offersFor(pack,SEL);
+  if(!offers.length){ toast('No seller covers this combination'); return; }
+  offerCtx={pack, offers, sel:{...SEL}, pick:0, qty:offers[0].min, sort:'price'};
+  $('oSort').value='price';
+  $('offerTitle').textContent=[pack.title, ...SC.attrs.map(a=>SEL[a.key])].join(' · ');
+  renderOffers();
+  $('offerMask').classList.add('show');
+}
+function sortedOffers(){
+  const c=[...offerCtx.offers], s=offerCtx.sort;
+  if(s==='price')  c.sort((a,b)=>a.price-b.price||a.fast-b.fast);
+  if(s==='rating') c.sort((a,b)=>b.seller.pos-a.seller.pos||a.price-b.price);
+  if(s==='orders') c.sort((a,b)=>b.seller.orders-a.seller.orders||a.price-b.price);
+  if(s==='fast')   c.sort((a,b)=>a.fast-b.fast||a.price-b.price);
+  return c;
+}
+function renderOffers(){
+  const list=sortedOffers(); offerCtx.view=list;
+  $('offerList').innerHTML=list.map((o,i)=>{
+    const on=i===offerCtx.pick;
+    return `<div class="offer ${on?'on':''}" onclick="pickOffer(${i})">
+      <div class="radio"></div>
+      <div class="avwrap">
+        <div class="av">${o.seller.init}</div>
+        <span class="dot ${o.seller.online?'on':''} tip" data-t="${o.seller.online?'Online now':'Offline — orders are queued'}"></span>
+      </div>
+      <div>
+        <div class="s-name">${o.seller.n}
+          ${o.seller.kyc?`<span class="tip" data-t="KYC verified — identity checked by IGV">${KYC_ICO}</span>`:''}
+          ${o.seller.dep?`<span class="tip" data-t="Security deposit on file — covers refunds if delivery fails">${DEP_ICO}</span>`:''}
+        </div>
+        <div class="s-meta">${o.seller.pos}% positive · ${o.seller.orders.toLocaleString()} orders
+          <em>|</em>${o.eta}
+          <em>|</em>${o.stock} in stock
+        </div>
+      </div>
+      <div class="o-tags"><span class="tag gray">${o.method}</span></div>
+      <div class="o-price">
+        <span class="tagline">${i===0&&offerCtx.sort==='price'?'<span class="tag meta">Lowest price</span>':''}</span>
+        <span class="p">${money(o.price)}<small>/unit</small></span>
+      </div>
+    </div>`;
+  }).join('');
+  updTotal();
+}
+function pickOffer(i){
+  offerCtx.pick=i;
+  const o=sortedOffers()[i];
+  offerCtx.qty=Math.max(o.min,Math.min(o.stock,offerCtx.qty));
+  renderOffers();
+}
+function chgQty(d){
+  const o=offerCtx.view[offerCtx.pick], next=offerCtx.qty+d;
+  if(next>o.stock){ toast('Only '+o.stock+' left with this seller'); return; }
+  if(next<o.min){ toast('This seller sells from '+o.min+' per order'); return; }
+  offerCtx.qty=next; updTotal();
+}
+function typeQty(v){ const n=parseInt(v,10); if(!isNaN(n)){ offerCtx.qty=n; updTotal(true); } }
+function commitQty(){
+  const o=offerCtx.view[offerCtx.pick], before=offerCtx.qty;
+  offerCtx.qty=Math.max(o.min,Math.min(o.stock,isNaN(before)?o.min:before));
+  if(before>o.stock) toast('Only '+o.stock+' left with this seller');
+  else if(before<o.min) toast('This seller sells from '+o.min+' per order');
+  updTotal();
+}
+function updTotal(typing){
+  const o=offerCtx.view[offerCtx.pick], pack=offerCtx.pack;
+  if(!typing) offerCtx.qty=Math.max(o.min,Math.min(o.stock,offerCtx.qty));
+  const q=offerCtx.qty, valid=q>=o.min&&q<=o.stock;
+  const total=o.price*q, off=pack.official*q;
+  const input=$('qtyV'); if(!typing) input.value=q;
+  input.min=o.min; input.max=o.stock;
+  $('qtyLimit').textContent='Min '+o.min+' · '+o.stock+' in stock';
+  $('qMinus').disabled=q<=o.min; $('qPlus').disabled=q>=o.stock;
+  $('offerBuyBtn').disabled=!valid;
+  $('offerTotal').innerHTML=valid?money(total)+`<span class="units"> / ${q} unit${q>1?'s':''}</span>`:'—';
+  $('offerSave').textContent=valid
+    ? '−'+Math.round((1-total/off)*100)+'% vs official ('+money(off-total)+' off)'
+    : 'Quantity must be '+o.min+'–'+o.stock;
+}
+function closeOffers(){ $('offerMask').classList.remove('show'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOffers(); });
+function offerBuy(){
+  const o=offerCtx.view[offerCtx.pick];
+  closeOffers();
+  toast('Checkout is out of scope for this round — '+offerCtx.qty+' × '+offerCtx.pack.title+' from '+o.seller.n);
+}
+
+/* ===================== boot ===================== */
+initSelection();
+renderScenarios(); renderAttrs(); renderSkus();
+</script>
+</body>
+</html>
